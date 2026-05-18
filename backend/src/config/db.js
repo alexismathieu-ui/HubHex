@@ -78,6 +78,35 @@ const ensureDatabaseSchema = async () => {
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id
     ON password_reset_tokens(user_id);
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_repositories (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      label VARCHAR(120) NOT NULL DEFAULT '',
+      url TEXT NOT NULL,
+      provider VARCHAR(20) NOT NULL DEFAULT 'other'
+        CHECK (provider IN ('github', 'gitlab', 'bitbucket', 'other')),
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_project_repositories_project_id
+    ON project_repositories(project_id);
+  `);
+
+  await pool.query(`
+    ALTER TABLE projects ADD COLUMN IF NOT EXISTS slug VARCHAR(80) NOT NULL DEFAULT '';
+  `);
+
+  const { backfillProjectSlugs } = require("../lib/project-slug");
+  await backfillProjectSlugs();
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_user_slug ON projects(user_id, slug);
+  `);
 };
 
 module.exports = { pool, ensureDatabaseSchema };

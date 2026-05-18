@@ -168,7 +168,7 @@ export default function Home() {
 
         <DashboardPanel token={token} currentUser={currentUser} />
 
-        <ProjectsPanel token={token} />
+        <ProjectsPanel token={token} currentUser={currentUser} />
 
         <CommunityPanel token={token} currentUser={currentUser} />
       </section>

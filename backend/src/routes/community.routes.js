@@ -25,6 +25,7 @@ const listProjectsQuerySchema = z.object({
 const publicProjectFields = `
   p.id,
   p.title,
+  p.slug,
   p.description,
   p.technologies,
   p.visibility,

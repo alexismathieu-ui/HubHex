@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 
 const { pool } = require("../config/db");
+const { ensureUniqueSlug, slugify } = require("../lib/project-slug");
 const { parsePositiveInt } = require("../lib/security");
 const { authenticate } = require("../middlewares/authenticate");
 const { requireProjectOwner } = require("../middlewares/require-project-owner");
@@ -9,7 +10,17 @@ const { tasksRouter } = require("./tasks.routes");
 
 const projectsRouter = express.Router();
 
+const PROJECT_FIELDS =
+  "id, user_id, title, slug, description, technologies, visibility, created_at, updated_at";
+
 const visibilityEnum = z.enum(["private", "public"]);
+
+const slugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug: minuscules, chiffres et tirets uniquement.");
 
 const normalizeTechnologies = (body) => {
   if (!body || typeof body !== "object" || !Object.prototype.hasOwnProperty.call(body, "technologies")) {
@@ -33,6 +44,7 @@ const normalizeTechnologies = (body) => {
 
 const createProjectSchema = z.object({
   title: z.string().trim().min(1).max(120),
+  slug: slugSchema.optional(),
   description: z.string().trim().min(1).max(20_000),
   technologies: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
   visibility: visibilityEnum.default("private"),
@@ -40,6 +52,7 @@ const createProjectSchema = z.object({
 
 const updateProjectSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
+  slug: slugSchema.optional(),
   description: z.string().trim().min(1).max(20_000).optional(),
   technologies: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
   visibility: visibilityEnum.optional(),
@@ -58,12 +71,14 @@ projectsRouter.post("/", async (req, res, next) => {
     normalizeTechnologies(body);
     const payload = createProjectSchema.parse(body);
     const technologies = payload.technologies.join(", ");
+    const baseSlug = payload.slug ? slugify(payload.slug) : slugify(payload.title);
+    const slug = await ensureUniqueSlug(req.auth.userId, baseSlug);
 
     const result = await pool.query(
-      `INSERT INTO projects (user_id, title, description, technologies, visibility)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, user_id, title, description, technologies, visibility, created_at, updated_at`,
-      [req.auth.userId, payload.title, payload.description, technologies, payload.visibility],
+      `INSERT INTO projects (user_id, title, slug, description, technologies, visibility)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING ${PROJECT_FIELDS}`,
+      [req.auth.userId, payload.title, slug, payload.description, technologies, payload.visibility],
     );
 
     return res.status(201).json({ project: result.rows[0] });
@@ -75,7 +90,7 @@ projectsRouter.post("/", async (req, res, next) => {
 projectsRouter.get("/", async (req, res, next) => {
   try {
     const result = await pool.query(
-      `SELECT id, user_id, title, description, technologies, visibility, created_at, updated_at
+      `SELECT ${PROJECT_FIELDS}
        FROM projects
        WHERE user_id = $1
        ORDER BY created_at DESC`,
@@ -95,7 +110,7 @@ projectsRouter.get("/:projectId", async (req, res, next) => {
     }
 
     const result = await pool.query(
-      `SELECT id, user_id, title, description, technologies, visibility, created_at, updated_at
+      `SELECT ${PROJECT_FIELDS}
        FROM projects
        WHERE id = $1 AND user_id = $2`,
       [projectId, req.auth.userId],
@@ -142,6 +157,11 @@ projectsRouter.put("/:projectId", async (req, res, next) => {
       fields.push(`title = $${index++}`);
       values.push(payload.title);
     }
+    if (payload.slug !== undefined) {
+      const slug = await ensureUniqueSlug(req.auth.userId, slugify(payload.slug), projectId);
+      fields.push(`slug = $${index++}`);
+      values.push(slug);
+    }
     if (payload.description !== undefined) {
       fields.push(`description = $${index++}`);
       values.push(payload.description);
@@ -162,7 +182,7 @@ projectsRouter.put("/:projectId", async (req, res, next) => {
       UPDATE projects
       SET ${fields.join(", ")}
       WHERE id = $${index++} AND user_id = $${index}
-      RETURNING id, user_id, title, description, technologies, visibility, created_at, updated_at
+      RETURNING ${PROJECT_FIELDS}
     `;
 
     const result = await pool.query(updateQuery, values);

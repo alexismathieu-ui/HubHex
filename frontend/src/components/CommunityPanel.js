@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { depotPath } from "../lib/depotUtils";
 import { TECH_TAGS } from "../data/techTags";
 import { API_BASE_URL } from "../lib/apiBaseUrl";
 import { formatApiError } from "../lib/formatApiError";
@@ -289,10 +290,13 @@ export function CommunityPanel({ token, currentUser }) {
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-lg font-semibold text-slate-100">{project.title}</p>
+                  <p className="font-mono text-xs text-sky-400/90">
+                    {depotPath(project.author_username, project.slug)}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-100">{project.title}</p>
                   <p className="mt-1 text-xs text-sky-300">
                     Par {project.author_username}
-                    {project.is_mine ? " (ton projet)" : ""}
+                    {project.is_mine ? " (ton depot)" : ""}
                   </p>
                   <p className="mt-2 text-sm text-slate-400">{project.description}</p>
                   <p className="mt-2 text-xs text-slate-500">

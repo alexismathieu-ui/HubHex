@@ -52,7 +52,7 @@ app.get("/", (_req, res) => {
       "/api/auth/reset-password",
       "/api/auth/me (GET, PATCH)",
       "/api/dashboard?activityLimit=20",
-      "/api/projects",
+      "/api/projects (repositories[] sur POST/PUT)",
       "/api/projects/:projectId/tasks",
       "/api/community/projects?q=&technology=&sort=recent|popular",
       "/api/community/projects/:projectId/comments",
