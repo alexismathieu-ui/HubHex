@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 
 const { env } = require("./config/env");
 const { authRouter } = require("./routes/auth.routes");
+const { communityRouter } = require("./routes/community.routes");
 const { projectsRouter } = require("./routes/projects.routes");
 const { errorHandler } = require("./middlewares/error-handler");
 const { healthRouter } = require("./routes/health.routes");
@@ -39,12 +40,15 @@ app.get("/", (_req, res) => {
       "/api/auth/me (GET, PATCH)",
       "/api/projects",
       "/api/projects/:projectId/tasks",
+      "/api/community/projects",
+      "/api/community/projects/:projectId/comments",
     ],
   });
 });
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/projects", projectsRouter);
+app.use("/api/community", communityRouter);
 
 app.use(errorHandler);
 

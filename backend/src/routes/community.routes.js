@@ -1,0 +1,181 @@
+const express = require("express");
+const { z } = require("zod");
+
+const { pool } = require("../config/db");
+const { authenticate } = require("../middlewares/authenticate");
+const { optionalAuthenticate } = require("../middlewares/optional-authenticate");
+
+const communityRouter = express.Router();
+
+const createCommentSchema = z.object({
+  content: z.string().trim().min(1).max(2000),
+});
+
+const publicProjectFields = `
+  p.id,
+  p.title,
+  p.description,
+  p.technologies,
+  p.visibility,
+  p.created_at,
+  p.updated_at,
+  u.id AS author_id,
+  u.username AS author_username
+`;
+
+const fetchPublicProject = async (projectId) => {
+  const result = await pool.query(
+    `SELECT ${publicProjectFields}
+     FROM projects p
+     JOIN users u ON u.id = p.user_id
+     WHERE p.id = $1 AND p.visibility = 'public'`,
+    [projectId],
+  );
+  return result.rows[0] ?? null;
+};
+
+communityRouter.get("/projects", optionalAuthenticate, async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      `SELECT ${publicProjectFields}
+       FROM projects p
+       JOIN users u ON u.id = p.user_id
+       WHERE p.visibility = 'public'
+       ORDER BY p.created_at DESC`,
+    );
+
+    const projects = result.rows.map((row) => ({
+      ...row,
+      is_mine: req.auth?.userId === row.author_id,
+    }));
+
+    return res.status(200).json({ projects });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+communityRouter.get("/projects/:projectId", optionalAuthenticate, async (req, res, next) => {
+  try {
+    const projectId = Number(req.params.projectId);
+    if (!Number.isInteger(projectId)) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
+
+    const project = await fetchPublicProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: { message: "Public project not found." } });
+    }
+
+    return res.status(200).json({
+      project: {
+        ...project,
+        is_mine: req.auth?.userId === project.author_id,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+communityRouter.get("/projects/:projectId/comments", async (req, res, next) => {
+  try {
+    const projectId = Number(req.params.projectId);
+    if (!Number.isInteger(projectId)) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
+
+    const project = await fetchPublicProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: { message: "Public project not found." } });
+    }
+
+    const result = await pool.query(
+      `SELECT c.id, c.project_id, c.user_id, c.content, c.created_at, c.updated_at,
+              u.username AS author_username
+       FROM comments c
+       JOIN users u ON u.id = c.user_id
+       WHERE c.project_id = $1
+       ORDER BY c.created_at ASC`,
+      [projectId],
+    );
+
+    return res.status(200).json({ comments: result.rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+communityRouter.post("/projects/:projectId/comments", authenticate, async (req, res, next) => {
+  try {
+    const projectId = Number(req.params.projectId);
+    if (!Number.isInteger(projectId)) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
+
+    const project = await fetchPublicProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: { message: "Public project not found." } });
+    }
+
+    const payload = createCommentSchema.parse(req.body);
+    const result = await pool.query(
+      `INSERT INTO comments (project_id, user_id, content)
+       VALUES ($1, $2, $3)
+       RETURNING id, project_id, user_id, content, created_at, updated_at`,
+      [projectId, req.auth.userId, payload.content],
+    );
+
+    const comment = {
+      ...result.rows[0],
+      author_username: req.auth.username,
+    };
+
+    return res.status(201).json({ comment });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+communityRouter.delete(
+  "/projects/:projectId/comments/:commentId",
+  authenticate,
+  async (req, res, next) => {
+    try {
+      const projectId = Number(req.params.projectId);
+      const commentId = Number(req.params.commentId);
+      if (!Number.isInteger(projectId) || !Number.isInteger(commentId)) {
+        return res.status(400).json({ error: { message: "Invalid id." } });
+      }
+
+      const project = await fetchPublicProject(projectId);
+      if (!project) {
+        return res.status(404).json({ error: { message: "Public project not found." } });
+      }
+
+      const commentResult = await pool.query(
+        "SELECT id, user_id FROM comments WHERE id = $1 AND project_id = $2",
+        [commentId, projectId],
+      );
+      const comment = commentResult.rows[0];
+      if (!comment) {
+        return res.status(404).json({ error: { message: "Comment not found." } });
+      }
+
+      const isAuthor = comment.user_id === req.auth.userId;
+      const isProjectOwner = project.author_id === req.auth.userId;
+      if (!isAuthor && !isProjectOwner) {
+        return res.status(403).json({
+          error: { message: "You can only delete your own comments or moderate your project." },
+        });
+      }
+
+      await pool.query("DELETE FROM comments WHERE id = $1", [commentId]);
+      return res.status(200).json({ message: "Comment deleted." });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
+module.exports = { communityRouter };
