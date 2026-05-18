@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../lib/apiBaseUrl";
 import { formatApiError } from "../lib/formatApiError";
 
+import { DashboardPanel } from "../components/DashboardPanel";
 import { CommunityPanel } from "../components/CommunityPanel";
 import { ProfilePanel } from "../components/ProfilePanel";
 import { ProjectsPanel } from "../components/ProjectsPanel";
@@ -159,6 +160,8 @@ export default function Home() {
           currentUser={currentUser}
           onProfileUpdated={onProfileUpdated}
         />
+
+        <DashboardPanel token={token} currentUser={currentUser} />
 
         <ProjectsPanel token={token} />
 

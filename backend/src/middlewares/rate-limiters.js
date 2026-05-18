@@ -33,4 +33,20 @@ const commentLimiter = rateLimit({
   },
 });
 
-module.exports = { authLimiter, commentLimiter, communityReadLimiter };
+/** Limite l'abus du tableau de bord (agregations couteuses). */
+const dashboardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { message: "Trop de requetes dashboard. Reessaie plus tard." },
+  },
+});
+
+module.exports = {
+  authLimiter,
+  commentLimiter,
+  communityReadLimiter,
+  dashboardLimiter,
+};

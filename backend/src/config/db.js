@@ -53,6 +53,16 @@ const ensureDatabaseSchema = async () => {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
   `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_comments_project_id ON comments(project_id);
+  `);
 };
 
 module.exports = { pool, ensureDatabaseSchema };

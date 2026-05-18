@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const { env } = require("./config/env");
 const { authRouter } = require("./routes/auth.routes");
 const { communityRouter } = require("./routes/community.routes");
+const { dashboardRouter } = require("./routes/dashboard.routes");
 const { projectsRouter } = require("./routes/projects.routes");
 const { errorHandler } = require("./middlewares/error-handler");
 const { requireJsonBody } = require("./middlewares/require-json");
@@ -48,6 +49,7 @@ app.get("/", (_req, res) => {
       "/api/auth/register",
       "/api/auth/login",
       "/api/auth/me (GET, PATCH)",
+      "/api/dashboard?activityLimit=20",
       "/api/projects",
       "/api/projects/:projectId/tasks",
       "/api/community/projects?q=&technology=&sort=recent|popular",
@@ -57,6 +59,7 @@ app.get("/", (_req, res) => {
 });
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/dashboard", dashboardRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/community", communityRouter);
 
