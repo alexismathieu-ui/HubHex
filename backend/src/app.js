@@ -36,7 +36,7 @@ app.get("/", (_req, res) => {
       "/api/health",
       "/api/auth/register",
       "/api/auth/login",
-      "/api/auth/me",
+      "/api/auth/me (GET, PATCH)",
       "/api/projects",
       "/api/projects/:projectId/tasks",
     ],

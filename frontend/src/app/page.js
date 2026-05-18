@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../lib/apiBaseUrl";
 import { formatApiError } from "../lib/formatApiError";
 
+import { ProfilePanel } from "../components/ProfilePanel";
 import { ProjectsPanel } from "../components/ProjectsPanel";
 
 const TOKEN_KEY = "hubhex_token";
@@ -100,6 +101,14 @@ export default function Home() {
     setMeMessage("Aucune session active.");
   };
 
+  const onProfileUpdated = (user, newToken) => {
+    if (newToken) {
+      setToken(newToken);
+    }
+    setCurrentUser(user);
+    setMeMessage("Profil a jour.");
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-14 md:px-10">
@@ -139,11 +148,16 @@ export default function Home() {
         <article className="rounded-xl border border-emerald-800 bg-emerald-950/40 p-5">
           <h3 className="text-xl font-semibold text-emerald-300">Etat de session</h3>
           <p className="mt-2 text-sm text-emerald-100">{meMessage}</p>
-          <p className="mt-2 break-all text-xs text-emerald-200">Token: {token ? `${token.slice(0, 45)}...` : "aucun"}</p>
           <p className="mt-2 text-sm text-emerald-100">
             Utilisateur courant: {currentUser ? `${currentUser.username} (${currentUser.email})` : "non connecte"}
           </p>
         </article>
+
+        <ProfilePanel
+          token={token}
+          currentUser={currentUser}
+          onProfileUpdated={onProfileUpdated}
+        />
 
         <ProjectsPanel token={token} />
       </section>

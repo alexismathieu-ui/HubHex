@@ -20,6 +20,36 @@ const loginSchema = z.object({
   password: z.string().min(1).max(100),
 });
 
+const updateProfileSchema = z
+  .object({
+    username: z.string().trim().min(2).max(50).optional(),
+    email: z.string().trim().email().max(255).optional(),
+    currentPassword: z.string().min(1).max(100).optional(),
+    newPassword: z.string().min(8).max(100).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasField =
+      data.username !== undefined ||
+      data.email !== undefined ||
+      data.newPassword !== undefined;
+    if (!hasField) {
+      ctx.addIssue({
+        code: "custom",
+        message: "No profile data to update.",
+        path: [],
+      });
+    }
+    const changingPassword =
+      data.currentPassword !== undefined || data.newPassword !== undefined;
+    if (changingPassword && (!data.currentPassword || !data.newPassword)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Current and new password are both required to change password.",
+        path: ["newPassword"],
+      });
+    }
+  });
+
 authRouter.post("/register", async (req, res, next) => {
   try {
     const payload = registerSchema.parse(req.body);
@@ -101,6 +131,93 @@ authRouter.get("/me", authenticate, async (req, res, next) => {
     }
 
     return res.status(200).json({ user });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.patch("/me", authenticate, async (req, res, next) => {
+  try {
+    const payload = updateProfileSchema.parse(req.body);
+
+    const existingResult = await pool.query(
+      "SELECT id, username, email, password_hash FROM users WHERE id = $1",
+      [req.auth.userId],
+    );
+    const existing = existingResult.rows[0];
+    if (!existing) {
+      return res.status(404).json({ error: { message: "User not found." } });
+    }
+
+    if (payload.email !== undefined) {
+      const normalizedEmail = payload.email.toLowerCase();
+      if (normalizedEmail !== existing.email) {
+        const emailTaken = await pool.query(
+          "SELECT id FROM users WHERE email = $1 AND id <> $2",
+          [normalizedEmail, req.auth.userId],
+        );
+        if (emailTaken.rows.length > 0) {
+          return res.status(409).json({ error: { message: "Email already used." } });
+        }
+      }
+    }
+
+    if (payload.newPassword !== undefined) {
+      const isCurrentValid = await bcrypt.compare(
+        payload.currentPassword,
+        existing.password_hash,
+      );
+      if (!isCurrentValid) {
+        return res.status(401).json({ error: { message: "Current password is incorrect." } });
+      }
+    }
+
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    if (payload.username !== undefined) {
+      fields.push(`username = $${index++}`);
+      values.push(payload.username);
+    }
+    if (payload.email !== undefined) {
+      fields.push(`email = $${index++}`);
+      values.push(payload.email.toLowerCase());
+    }
+    if (payload.newPassword !== undefined) {
+      const passwordHash = await bcrypt.hash(payload.newPassword, 10);
+      fields.push(`password_hash = $${index++}`);
+      values.push(passwordHash);
+    }
+
+    values.push(req.auth.userId);
+    const updateQuery = `
+      UPDATE users
+      SET ${fields.join(", ")}
+      WHERE id = $${index}
+      RETURNING id, username, email, created_at
+    `;
+    const updateResult = await pool.query(updateQuery, values);
+    const user = updateResult.rows[0];
+
+    const identityChanged =
+      (payload.username !== undefined && payload.username !== existing.username) ||
+      (payload.email !== undefined && payload.email.toLowerCase() !== existing.email);
+
+    const response = {
+      message: "Profile updated successfully.",
+      user,
+    };
+
+    if (identityChanged) {
+      response.token = jwt.sign(
+        { userId: user.id, email: user.email, username: user.username },
+        env.JWT_SECRET,
+        { expiresIn: "7d" },
+      );
+    }
+
+    return res.status(200).json(response);
   } catch (error) {
     return next(error);
   }
