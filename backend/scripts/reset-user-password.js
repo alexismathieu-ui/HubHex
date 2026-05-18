@@ -33,6 +33,13 @@ const run = async () => {
     process.exit(1);
   }
 
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_ADMIN_SCRIPTS !== "true") {
+    console.error(
+      "Refuse en production. Definis ALLOW_ADMIN_SCRIPTS=true uniquement si tu maitrises l'environnement.",
+    );
+    process.exit(1);
+  }
+
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
   try {
@@ -45,11 +52,11 @@ const run = async () => {
       process.exit(1);
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    await pool.query("UPDATE users SET email = LOWER(email), password_hash = $1 WHERE id = $2", [
-      passwordHash,
-      user.id,
-    ]);
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await pool.query(
+      "UPDATE users SET email = LOWER(email), password_hash = $1, password_changed_at = NOW() WHERE id = $2",
+      [passwordHash, user.id],
+    );
 
     console.log(`Mot de passe mis a jour pour ${user.email} (id ${user.id}).`);
     console.log("Tu peux te connecter avec le nouveau mot de passe.");

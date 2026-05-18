@@ -1,10 +1,10 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const { z } = require("zod");
 
 const { pool } = require("../config/db");
 const { env } = require("../config/env");
+const { signAccessToken } = require("../lib/auth-token");
 const {
   generateResetToken,
   hashResetToken,
@@ -95,7 +95,7 @@ authRouter.post("/register", authLimiter, async (req, res, next) => {
       });
     }
 
-    const passwordHash = await bcrypt.hash(payload.password, 10);
+    const passwordHash = await bcrypt.hash(payload.password, 12);
     const insertResult = await pool.query(
       `INSERT INTO users (username, email, password_hash)
        VALUES ($1, $2, $3)
@@ -132,11 +132,7 @@ authRouter.post("/login", authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: { message: "Invalid credentials." } });
     }
 
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, username: user.username },
-      env.JWT_SECRET,
-      { expiresIn: "7d", algorithm: "HS256" },
-    );
+    const token = signAccessToken(user);
 
     return res.status(200).json({
       token,
@@ -179,12 +175,12 @@ authRouter.post("/forgot-password", forgotPasswordLimiter, async (req, res, next
         [user.id, tokenHash, expiresAt],
       );
 
-      if (env.NODE_ENV === "development") {
+      if (env.NODE_ENV === "development" && env.ALLOW_DEV_RESET_TOKEN) {
         response.dev_reset = {
           token: rawToken,
           expires_at: expiresAt.toISOString(),
           hint:
-            "Mode developpement : copie ce code dans le formulaire « Reinitialiser le mot de passe ». En production, il serait envoye par email.",
+            "Mode developpement (ALLOW_DEV_RESET_TOKEN) : en production le code serait envoye par email uniquement.",
         };
       }
     }
@@ -217,11 +213,11 @@ authRouter.post("/reset-password", resetPasswordLimiter, async (req, res, next) 
       });
     }
 
-    const passwordHash = await bcrypt.hash(payload.newPassword, 10);
-    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
-      passwordHash,
-      resetRow.user_id,
-    ]);
+    const passwordHash = await bcrypt.hash(payload.newPassword, 12);
+    await pool.query(
+      "UPDATE users SET password_hash = $1, password_changed_at = NOW() WHERE id = $2",
+      [passwordHash, resetRow.user_id],
+    );
     await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
       resetRow.user_id,
     ]);
@@ -314,9 +310,10 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
       values.push(payload.email.toLowerCase());
     }
     if (payload.newPassword !== undefined) {
-      const passwordHash = await bcrypt.hash(payload.newPassword, 10);
+      const passwordHash = await bcrypt.hash(payload.newPassword, 12);
       fields.push(`password_hash = $${index++}`);
       values.push(passwordHash);
+      fields.push("password_changed_at = NOW()");
     }
 
     values.push(req.auth.userId);
@@ -340,11 +337,7 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
     };
 
     if (identityChanged || passwordChanged) {
-      response.token = jwt.sign(
-        { userId: user.id, email: user.email, username: user.username },
-        env.JWT_SECRET,
-        { expiresIn: "7d", algorithm: "HS256" },
-      );
+      response.token = signAccessToken(user);
     }
 
     return res.status(200).json(response);

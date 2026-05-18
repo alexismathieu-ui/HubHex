@@ -77,11 +77,23 @@ const filesLimiter = rateLimit({
   },
 });
 
+/** Limite les imports en masse (payload lourd). */
+const filesImportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { message: "Trop d'imports de fichiers. Reessaie plus tard." },
+  },
+});
+
 module.exports = {
   authLimiter,
   commentLimiter,
   communityReadLimiter,
   dashboardLimiter,
+  filesImportLimiter,
   filesLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,

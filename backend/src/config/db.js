@@ -12,8 +12,13 @@ const ensureDatabaseSchema = async () => {
       username VARCHAR(50) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
+      password_changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+  `);
+
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
   `);
 
   await pool.query(`

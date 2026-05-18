@@ -9,12 +9,18 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required."),
   JWT_SECRET: z
     .string()
-    .min(12, "JWT_SECRET must contain at least 12 chars.")
+    .trim()
+    .min(32, "JWT_SECRET must contain at least 32 random characters.")
     .refine(
-      (value) => process.env.NODE_ENV !== "production" || value.length >= 32,
-      "JWT_SECRET must be at least 32 characters in production.",
+      (value) => value !== "change-this-super-secret-key-min-32-chars",
+      "JWT_SECRET must not use the example value from .env.example.",
     ),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
+  /** Uniquement en dev local : expose le token de reset dans la reponse JSON. */
+  ALLOW_DEV_RESET_TOKEN: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 const env = envSchema.parse(process.env);

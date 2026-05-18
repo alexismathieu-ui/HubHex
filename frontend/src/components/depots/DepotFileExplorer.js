@@ -12,7 +12,12 @@ import {
   pathsFromFileList,
 } from "../../lib/depots/fileImportUtils";
 import { formatMaxFileSize } from "../../lib/depots/importLimits";
-import { buildPathLabel, collectFolderIds, findNodeById } from "../../lib/depots/fileTreeUtils";
+import {
+  buildPathLabel,
+  collectFolderIds,
+  findNodeById,
+  idsMatch,
+} from "../../lib/depots/fileTreeUtils";
 import { formatApiError } from "../../lib/formatApiError";
 
 const emptyClipboard = () => ({ mode: null, ids: [] });
@@ -37,8 +42,8 @@ function TreeNode({
   const isFolder = node.kind === "folder";
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedIds.has(node.id);
-  const isTarget = targetParentId === node.id;
-  const isDragOver = dragOverId === node.id;
+  const isTarget = idsMatch(targetParentId, node.id);
+  const isDragOver = idsMatch(dragOverId, node.id);
 
   const indent = viewMode === "schema" ? depth * 28 : depth * 16;
   const rowClass =
@@ -117,17 +122,19 @@ function TreeNode({
             </span>
           ) : null}
         </button>
-        <button
-          type="button"
-          className="shrink-0 text-xs text-slate-500 hover:text-cyan-300"
-          title="Definir comme destination coller/deplacer"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSetTarget(node.id);
-          }}
-        >
-          →
-        </button>
+        {isFolder ? (
+          <button
+            type="button"
+            className="shrink-0 text-xs text-slate-500 hover:text-cyan-300"
+            title="Definir comme destination coller/deplacer"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSetTarget(node.id);
+            }}
+          >
+            →
+          </button>
+        ) : null}
       </div>
       {isFolder && isExpanded && node.children?.length > 0 ? (
         <div className={viewMode === "schema" ? "mt-1 border-l border-slate-700 pl-2" : ""}>
@@ -542,7 +549,7 @@ export function DepotFileExplorer({ token, projectId }) {
     }
   };
 
-  const pathLabel = buildPathLabel(items, targetParentId);
+  const pathLabel = buildPathLabel(items, targetParentId, tree);
 
   return (
     <div

@@ -1,12 +1,5 @@
-const {
-  MAX_BASE64_CONTENT_LENGTH,
-  MAX_IMPORT_BATCH_PAYLOAD,
-  MAX_IMPORT_PATH_LENGTH,
-  MAX_RAW_FILE_BYTES,
-  MAX_TEXT_CONTENT_LENGTH,
-} = require("./file-limits");
-
-const BASE64_RE = /^[A-Za-z0-9+/]*={0,2}$/;
+const { MAX_IMPORT_BATCH_PAYLOAD, MAX_IMPORT_PATH_LENGTH } = require("./file-limits");
+const { sanitizeMimeType, validateFileContent } = require("./file-content-security");
 
 const DANGEROUS_PATH_SEGMENTS = new Set([
   "con",
@@ -61,48 +54,12 @@ const validateImportPath = (rawPath) => {
   return parts;
 };
 
-const validateImportContent = (content, encoding) => {
-  const value = String(content ?? "");
-  if (encoding === "base64") {
-    if (value.length > MAX_BASE64_CONTENT_LENGTH) {
-      const error = new Error("File too large (max 10 Mo per file).");
-      error.statusCode = 400;
-      throw error;
-    }
-    if (value.length > 0 && !BASE64_RE.test(value)) {
-      const error = new Error("Invalid base64 content.");
-      error.statusCode = 400;
-      throw error;
-    }
-    const estimatedRaw = Math.floor((value.length * 3) / 4);
-    if (estimatedRaw > MAX_RAW_FILE_BYTES) {
-      const error = new Error("File too large (max 10 Mo per file).");
-      error.statusCode = 400;
-      throw error;
-    }
-    return;
-  }
-
-  if (value.length > MAX_TEXT_CONTENT_LENGTH) {
-    const error = new Error("Text file too large (max 10 Mo per file).");
-    error.statusCode = 400;
-    throw error;
-  }
-  if (value.includes("\0")) {
-    const error = new Error("Text content contains invalid characters.");
-    error.statusCode = 400;
-    throw error;
-  }
-};
-
 const validateImportEntry = (entry) => {
   validateImportPath(entry.path);
   const encoding = entry.encoding === "base64" ? "base64" : "text";
-  validateImportContent(entry.content, encoding);
-  if (entry.mimeType != null && String(entry.mimeType).length > 120) {
-    const error = new Error("MIME type too long.");
-    error.statusCode = 400;
-    throw error;
+  validateFileContent(entry.content, encoding);
+  if (entry.mimeType != null) {
+    sanitizeMimeType(entry.mimeType);
   }
 };
 
@@ -122,7 +79,6 @@ const validateImportBatch = (entries) => {
 module.exports = {
   normalizeImportPath,
   validateImportBatch,
-  validateImportContent,
   validateImportEntry,
   validateImportPath,
 };

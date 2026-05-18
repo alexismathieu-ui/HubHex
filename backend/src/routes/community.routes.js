@@ -120,7 +120,11 @@ communityRouter.get("/projects", communityReadLimiter, optionalAuthenticate, asy
   }
 });
 
-communityRouter.get("/projects/:projectId", optionalAuthenticate, async (req, res, next) => {
+communityRouter.get(
+  "/projects/:projectId",
+  communityReadLimiter,
+  optionalAuthenticate,
+  async (req, res, next) => {
   try {
     const projectId = parsePositiveInt(req.params.projectId);
     if (!projectId) {
@@ -141,9 +145,10 @@ communityRouter.get("/projects/:projectId", optionalAuthenticate, async (req, re
   } catch (error) {
     return next(error);
   }
-});
+  },
+);
 
-communityRouter.get("/projects/:projectId/comments", async (req, res, next) => {
+communityRouter.get("/projects/:projectId/comments", communityReadLimiter, async (req, res, next) => {
   try {
     const projectId = parsePositiveInt(req.params.projectId);
     if (!projectId) {

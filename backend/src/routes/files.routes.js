@@ -21,9 +21,10 @@ const {
   pasteNodes,
   resolveUniqueName,
 } = require("../lib/project-files-db");
+const { sanitizeMimeType, validateFileContent } = require("../lib/file-content-security");
 const { fileNameSchema } = require("../lib/project-files");
 const { parsePositiveInt } = require("../lib/security");
-const { filesLimiter } = require("../middlewares/rate-limiters");
+const { filesImportLimiter, filesLimiter } = require("../middlewares/rate-limiters");
 
 const filesRouter = express.Router({ mergeParams: true });
 
@@ -114,10 +115,9 @@ filesRouter.post("/", async (req, res, next) => {
 
     const name = await resolveUniqueName(projectId, payload.parentId, payload.name);
     const encoding = payload.kind === "file" ? payload.encoding : "text";
-    const content = payload.kind === "file" ? payload.content : "";
-    if (encoding === "text" && content.length > MAX_FILE_CONTENT) {
-      return res.status(400).json({ error: { message: "Text file too large." } });
-    }
+    const content =
+      payload.kind === "file" ? validateFileContent(payload.content, encoding) : "";
+    const mimeType = payload.kind === "file" ? sanitizeMimeType(payload.mimeType) : null;
 
     const result = await pool.query(
       `INSERT INTO project_files (project_id, parent_id, name, kind, content, encoding, mime_type, sort_order)
@@ -135,12 +135,15 @@ filesRouter.post("/", async (req, res, next) => {
         payload.kind,
         content,
         encoding,
-        payload.mimeType ?? null,
+        mimeType,
       ],
     );
 
     return res.status(201).json({ item: result.rows[0] });
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: { message: error.message } });
+    }
     return next(error);
   }
 });
@@ -169,8 +172,9 @@ filesRouter.patch("/:fileId", async (req, res, next) => {
       values.push(name);
     }
     if (payload.content !== undefined && existing.kind === "file") {
+      const encoding = existing.encoding || "text";
       fields.push(`content = $${index++}`);
-      values.push(payload.content);
+      values.push(validateFileContent(payload.content, encoding));
     }
 
     fields.push("updated_at = NOW()");
@@ -188,6 +192,9 @@ filesRouter.patch("/:fileId", async (req, res, next) => {
 
     return res.status(200).json({ item: result.rows[0] });
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: { message: error.message } });
+    }
     return next(error);
   }
 });
@@ -233,7 +240,7 @@ filesRouter.post("/move", async (req, res, next) => {
   }
 });
 
-filesRouter.post("/import-batch", async (req, res, next) => {
+filesRouter.post("/import-batch", filesImportLimiter, async (req, res, next) => {
   try {
     const projectId = parsePositiveInt(req.params.projectId);
     const payload = importBatchSchema.parse(req.body);

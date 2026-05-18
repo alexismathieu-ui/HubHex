@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 
 const { env } = require("./config/env");
+const { corsOrigin } = require("./lib/cors-options");
 const { authRouter } = require("./routes/auth.routes");
 const { communityRouter } = require("./routes/community.routes");
 const { dashboardRouter } = require("./routes/dashboard.routes");
@@ -20,11 +21,14 @@ if (env.NODE_ENV === "production") {
 }
 
 app.disable("x-powered-by");
-app.use(helmet());
+app.use(
+  helmet({
+    hsts: env.NODE_ENV === "production" ? { maxAge: 31_536_000, includeSubDomains: true } : false,
+  }),
+);
 app.use(
   cors({
-    // En dev, refléter l'Origin (localhost vs 127.0.0.1) pour la preflight CORS.
-    origin: env.NODE_ENV === "development" ? true : env.FRONTEND_URL,
+    origin: corsOrigin,
     credentials: true,
   }),
 );
@@ -44,6 +48,9 @@ app.use(
 
 app.get("/", (_req, res) => {
   if (env.NODE_ENV === "production") {
+    return res.json({ name: "HubHex API", status: "ok" });
+  }
+  if (env.NODE_ENV !== "development") {
     return res.json({ name: "HubHex API", status: "ok" });
   }
   return res.json({

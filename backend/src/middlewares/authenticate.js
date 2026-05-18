@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const { pool } = require("../config/db");
 const { env } = require("../config/env");
+const { isTokenRevokedByPasswordChange } = require("../lib/auth-token");
 const { parsePositiveInt } = require("../lib/security");
 
 const extractBearerToken = (authorizationHeader) => {
@@ -25,12 +26,16 @@ const authenticate = async (req, res, next) => {
     }
 
     const result = await pool.query(
-      "SELECT id, username, email FROM users WHERE id = $1",
+      "SELECT id, username, email, password_changed_at FROM users WHERE id = $1",
       [userId],
     );
     const user = result.rows[0];
     if (!user) {
       return res.status(401).json({ error: { message: "Invalid token." } });
+    }
+
+    if (isTokenRevokedByPasswordChange(decoded, user.password_changed_at)) {
+      return res.status(401).json({ error: { message: "Session expired. Please log in again." } });
     }
 
     req.auth = {
