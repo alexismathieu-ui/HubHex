@@ -28,7 +28,11 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json({ limit: "100kb" }));
+app.use((req, res, next) => {
+  const isFileImport = /\/files\/import-batch/i.test(req.originalUrl);
+  const limit = isFileImport ? "20mb" : "100kb";
+  express.json({ limit })(req, res, next);
+});
 app.use("/api", requireJsonBody);
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(
@@ -52,7 +56,9 @@ app.get("/", (_req, res) => {
       "/api/auth/reset-password",
       "/api/auth/me (GET, PATCH)",
       "/api/dashboard?activityLimit=20",
-      "/api/projects (repositories[] sur POST/PUT)",
+      "/api/projects (slug sur POST/PUT)",
+      "/api/projects/:projectId/files/import-batch",
+      "/api/projects/:projectId/files (arborescence)",
       "/api/projects/:projectId/tasks",
       "/api/community/projects?q=&technology=&sort=recent|popular",
       "/api/community/projects/:projectId/comments",

@@ -107,6 +107,45 @@ const ensureDatabaseSchema = async () => {
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_user_slug ON projects(user_id, slug);
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_files (
+      id SERIAL PRIMARY KEY,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      parent_id INTEGER REFERENCES project_files(id) ON DELETE CASCADE,
+      name VARCHAR(255) NOT NULL,
+      kind VARCHAR(10) NOT NULL CHECK (kind IN ('file', 'folder')),
+      content TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_project_files_project_id ON project_files(project_id);
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_project_files_parent_id ON project_files(parent_id);
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_project_files_unique_name
+    ON project_files (project_id, COALESCE(parent_id, 0), name);
+  `);
+
+  await pool.query(`
+    ALTER TABLE project_files ADD COLUMN IF NOT EXISTS encoding VARCHAR(10) NOT NULL DEFAULT 'text';
+  `);
+  await pool.query(`
+    ALTER TABLE project_files ADD COLUMN IF NOT EXISTS mime_type VARCHAR(120);
+  `);
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE project_files ADD CONSTRAINT project_files_encoding_check
+        CHECK (encoding IN ('text', 'base64'));
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
 };
 
 module.exports = { pool, ensureDatabaseSchema };

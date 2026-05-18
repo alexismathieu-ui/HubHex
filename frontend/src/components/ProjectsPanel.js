@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { DepotFileExplorer } from "./DepotFileExplorer";
 import { TechTagPicker } from "./TechTagPicker";
 import { TasksBoard } from "./TasksBoard";
 import { API_BASE_URL } from "../lib/apiBaseUrl";
@@ -511,17 +512,14 @@ export function ProjectsPanel({ token, currentUser }) {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-950/50 p-4">
+              <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/50 p-4">
                 <h5 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Espace de travail
+                  Espace de travail — fichiers
                 </h5>
-                <p className="mt-2 text-sm text-slate-400">
-                  Bientot : editeur de code, fichiers et outils de dev integres directement dans ce
-                  depot HubHex.
-                </p>
-                <p className="mt-2 font-mono text-xs text-slate-600">
+                <p className="mt-1 font-mono text-xs text-slate-600">
                   hubhex://{depotPath(username, selectedProject.slug)}
                 </p>
+                <DepotFileExplorer token={token} projectId={selectedProject.id} />
               </div>
 
               {kanbanOpen ? (

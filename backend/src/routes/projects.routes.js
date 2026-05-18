@@ -6,6 +6,7 @@ const { ensureUniqueSlug, slugify } = require("../lib/project-slug");
 const { parsePositiveInt } = require("../lib/security");
 const { authenticate } = require("../middlewares/authenticate");
 const { requireProjectOwner } = require("../middlewares/require-project-owner");
+const { filesRouter } = require("./files.routes");
 const { tasksRouter } = require("./tasks.routes");
 
 const projectsRouter = express.Router();
@@ -60,6 +61,7 @@ const updateProjectSchema = z.object({
 
 projectsRouter.use(authenticate);
 
+projectsRouter.use("/:projectId/files", requireProjectOwner, filesRouter);
 projectsRouter.use("/:projectId/tasks", requireProjectOwner, tasksRouter);
 
 projectsRouter.post("/", async (req, res, next) => {
