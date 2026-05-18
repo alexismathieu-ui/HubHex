@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { API_BASE_URL } from "../lib/apiBaseUrl";
-import { formatApiError } from "../lib/formatApiError";
+import { API_BASE_URL } from "../../lib/apiBaseUrl";
+import { formatApiError } from "../../lib/formatApiError";
 
 const STATUS_LABELS = {
   todo: "A faire",

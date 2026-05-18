@@ -1,5 +1,10 @@
 import { resolveArchivePathEntries } from "./archiveImportUtils";
-import { formatMaxFileSize, MAX_BINARY_BYTES, MAX_IMPORT_CHUNK_BYTES, MAX_TEXT_BYTES } from "./importLimits";
+import {
+  formatMaxFileSize,
+  MAX_BINARY_BYTES,
+  MAX_IMPORT_CHUNK_BYTES,
+  MAX_TEXT_BYTES,
+} from "./importLimits";
 
 const TEXT_EXTENSIONS = new Set([
   ".js",

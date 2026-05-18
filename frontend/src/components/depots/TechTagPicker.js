@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { TECH_TAGS } from "../data/techTags";
+import { TECH_TAGS } from "../../data/techTags";
 
 export function TechTagPicker({ value, onChange, hint }) {
   const [search, setSearch] = useState("");

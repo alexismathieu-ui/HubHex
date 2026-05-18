@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-import { API_BASE_URL } from "../lib/apiBaseUrl";
-import { formatApiError } from "../lib/formatApiError";
+import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../lib/apiBaseUrl";
+import { TOKEN_KEY } from "../../lib/auth/constants";
+import { formatApiError } from "../../lib/formatApiError";
 
-const TOKEN_KEY = "hubhex_token";
-
-export function ProfilePanel({ token, currentUser, onProfileUpdated }) {
+export function ProfilePanel() {
+  const { token, currentUser, setSession } = useAuth();
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -115,7 +116,7 @@ export function ProfilePanel({ token, currentUser, onProfileUpdated }) {
         confirmPassword: "",
       }));
       setMessage("Profil mis a jour avec succes.");
-      onProfileUpdated?.(data.user, data.token);
+      setSession(data.token, data.user);
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -125,7 +126,7 @@ export function ProfilePanel({ token, currentUser, onProfileUpdated }) {
 
   return (
     <article className="rounded-xl border border-violet-800/60 bg-violet-950/30 p-5">
-      <h3 className="text-xl font-semibold text-violet-200">Mon profil</h3>
+      <h1 className="text-2xl font-semibold text-violet-200">Mon profil</h1>
       <p className="mt-1 text-sm text-violet-300/80">
         Modifie ton nom d&apos;utilisateur, ton email ou ton mot de passe.
       </p>

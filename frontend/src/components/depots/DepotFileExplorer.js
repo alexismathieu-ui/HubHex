@@ -3,17 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ArchiveImportDialog } from "./ArchiveImportDialog";
-import { API_BASE_URL } from "../lib/apiBaseUrl";
+import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import {
   buildImportPayload,
   chunkEntriesBySize,
   collectFromDataTransfer,
   expandPathEntriesWithArchives,
   pathsFromFileList,
-} from "../lib/fileImportUtils";
-import { formatMaxFileSize } from "../lib/importLimits";
-import { buildPathLabel, collectFolderIds, findNodeById } from "../lib/fileTreeUtils";
-import { formatApiError } from "../lib/formatApiError";
+} from "../../lib/depots/fileImportUtils";
+import { formatMaxFileSize } from "../../lib/depots/importLimits";
+import { buildPathLabel, collectFolderIds, findNodeById } from "../../lib/depots/fileTreeUtils";
+import { formatApiError } from "../../lib/formatApiError";
 
 const emptyClipboard = () => ({ mode: null, ids: [] });
 

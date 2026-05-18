@@ -1,6 +1,6 @@
 "use client";
 
-import { isZipFileName } from "../lib/archiveImportUtils";
+import { isZipFileName } from "../../lib/depots/archiveImportUtils";
 
 export function ArchiveImportDialog({ file, path, onChoose, onCancel }) {
   if (!file) {

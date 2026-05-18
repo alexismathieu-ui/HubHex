@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { depotPath } from "../lib/depotUtils";
-import { TECH_TAGS } from "../data/techTags";
-import { API_BASE_URL } from "../lib/apiBaseUrl";
-import { formatApiError } from "../lib/formatApiError";
+import { useAuth } from "../../context/AuthContext";
+import { depotPath } from "../../lib/depots/depotUtils";
+import { TECH_TAGS } from "../../data/techTags";
+import { API_BASE_URL } from "../../lib/apiBaseUrl";
+import { formatApiError } from "../../lib/formatApiError";
 
-export function CommunityPanel({ token, currentUser }) {
+export function CommunityPanel() {
+  const { token, currentUser } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
