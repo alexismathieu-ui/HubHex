@@ -33,6 +33,28 @@ const commentLimiter = rateLimit({
   },
 });
 
+/** Limite les demandes de reinitialisation de mot de passe. */
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { message: "Trop de demandes de reinitialisation. Reessaie plus tard." },
+  },
+});
+
+/** Limite les tentatives de validation d'un token de reset. */
+const resetPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { message: "Trop de tentatives de reinitialisation. Reessaie plus tard." },
+  },
+});
+
 /** Limite l'abus du tableau de bord (agregations couteuses). */
 const dashboardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -49,4 +71,6 @@ module.exports = {
   commentLimiter,
   communityReadLimiter,
   dashboardLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
 };

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../lib/apiBaseUrl";
 import { formatApiError } from "../lib/formatApiError";
 
+import { ForgotPasswordPanel } from "../components/ForgotPasswordPanel";
 import { DashboardPanel } from "../components/DashboardPanel";
 import { CommunityPanel } from "../components/CommunityPanel";
 import { ProfilePanel } from "../components/ProfilePanel";
@@ -87,7 +88,10 @@ export default function Home() {
       }
       localStorage.setItem(TOKEN_KEY, data.token);
       setToken(data.token);
-      setLoginMessage(`Connexion reussie: ${data.user.email}`);
+      const upgradeHint = data.password_needs_upgrade
+        ? " Ton mot de passe actuel fonctionne encore, mais pense a le changer (8+ car., lettre + chiffre) dans Mon profil."
+        : "";
+      setLoginMessage(`Connexion reussie: ${data.user.email}.${upgradeHint}`);
       setLoginForm({ email: "", password: "" });
       fetchMe(data.token);
     } catch (error) {
@@ -135,16 +139,17 @@ export default function Home() {
             </div>
           </form>
 
-          <form className="rounded-xl border border-slate-800 bg-slate-900 p-5" onSubmit={onLoginSubmit}>
+          <article className="rounded-xl border border-slate-800 bg-slate-900 p-5">
             <h3 className="text-xl font-semibold">Connexion</h3>
-            <div className="mt-4 flex flex-col gap-3">
+            <form className="mt-4 flex flex-col gap-3" onSubmit={onLoginSubmit}>
               <input className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2" type="email" placeholder="Email" value={loginForm.email} onChange={(event) => setLoginForm({ ...loginForm, email: event.target.value })} required />
               <input className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2" type="password" placeholder="Mot de passe" value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} required />
               <button className="rounded-lg bg-slate-100 px-4 py-2 font-semibold text-slate-900 hover:bg-white" type="submit">Se connecter</button>
               <button className="rounded-lg border border-slate-700 px-4 py-2 text-slate-200 hover:border-slate-500" type="button" onClick={onLogout}>Se deconnecter</button>
-              <p className="text-sm text-slate-300">{loginMessage}</p>
-            </div>
-          </form>
+            </form>
+            <ForgotPasswordPanel />
+            <p className="mt-3 text-sm text-slate-300">{loginMessage}</p>
+          </article>
         </div>
 
         <article className="rounded-xl border border-emerald-800 bg-emerald-950/40 p-5">

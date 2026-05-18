@@ -5,9 +5,18 @@ const { z } = require("zod");
 
 const { pool } = require("../config/db");
 const { env } = require("../config/env");
-const { passwordSchema, usernameSchema } = require("../lib/security");
+const {
+  generateResetToken,
+  hashResetToken,
+  resetTokenExpiresAt,
+} = require("../lib/password-reset");
+const { passwordSchema, usernameSchema, passwordMeetsPolicy } = require("../lib/security");
 const { authenticate } = require("../middlewares/authenticate");
-const { authLimiter } = require("../middlewares/rate-limiters");
+const {
+  authLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+} = require("../middlewares/rate-limiters");
 
 const authRouter = express.Router();
 
@@ -21,6 +30,18 @@ const loginSchema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(1).max(100),
 });
+
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().email().max(255),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().trim().length(64),
+  newPassword: passwordSchema,
+});
+
+const GENERIC_RESET_MESSAGE =
+  "Si un compte existe avec cet email, un code de reinitialisation a ete genere.";
 
 const updateProfileSchema = z
   .object({
@@ -97,7 +118,7 @@ authRouter.post("/login", authLimiter, async (req, res, next) => {
     const normalizedEmail = payload.email.toLowerCase();
 
     const result = await pool.query(
-      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
+      "SELECT id, username, email, password_hash FROM users WHERE LOWER(email) = $1",
       [normalizedEmail],
     );
 
@@ -124,6 +145,89 @@ authRouter.post("/login", authLimiter, async (req, res, next) => {
         username: user.username,
         email: user.email,
       },
+      password_needs_upgrade: !passwordMeetsPolicy(payload.password),
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.post("/forgot-password", forgotPasswordLimiter, async (req, res, next) => {
+  try {
+    const payload = forgotPasswordSchema.parse(req.body);
+    const normalizedEmail = payload.email.toLowerCase();
+
+    const userResult = await pool.query(
+      "SELECT id, email FROM users WHERE LOWER(email) = $1",
+      [normalizedEmail],
+    );
+    const user = userResult.rows[0];
+
+    const response = {
+      message: GENERIC_RESET_MESSAGE,
+    };
+
+    if (user) {
+      const rawToken = generateResetToken();
+      const tokenHash = hashResetToken(rawToken);
+      const expiresAt = resetTokenExpiresAt();
+
+      await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [user.id]);
+      await pool.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, $3)`,
+        [user.id, tokenHash, expiresAt],
+      );
+
+      if (env.NODE_ENV === "development") {
+        response.dev_reset = {
+          token: rawToken,
+          expires_at: expiresAt.toISOString(),
+          hint:
+            "Mode developpement : copie ce code dans le formulaire « Reinitialiser le mot de passe ». En production, il serait envoye par email.",
+        };
+      }
+    }
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.post("/reset-password", resetPasswordLimiter, async (req, res, next) => {
+  try {
+    const payload = resetPasswordSchema.parse(req.body);
+    const tokenHash = hashResetToken(payload.token);
+
+    const tokenResult = await pool.query(
+      `SELECT prt.id, prt.user_id, prt.expires_at
+       FROM password_reset_tokens prt
+       WHERE prt.token_hash = $1`,
+      [tokenHash],
+    );
+    const resetRow = tokenResult.rows[0];
+
+    if (!resetRow || new Date(resetRow.expires_at).getTime() < Date.now()) {
+      if (resetRow) {
+        await pool.query("DELETE FROM password_reset_tokens WHERE id = $1", [resetRow.id]);
+      }
+      return res.status(400).json({
+        error: { message: "Code invalide ou expire. Demande un nouveau code." },
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(payload.newPassword, 10);
+    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
+      passwordHash,
+      resetRow.user_id,
+    ]);
+    await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
+      resetRow.user_id,
+    ]);
+
+    return res.status(200).json({
+      message: "Mot de passe reinitialise. Tu peux te connecter.",
     });
   } catch (error) {
     return next(error);

@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node src/server.js",
     "dev:watch": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "reset-password": "node scripts/reset-user-password.js",
+    "normalize-emails": "node scripts/normalize-user-emails.js"
   },
   "license": "ISC",
   "type": "commonjs",

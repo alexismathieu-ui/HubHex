@@ -48,6 +48,8 @@ app.get("/", (_req, res) => {
       "/api/health",
       "/api/auth/register",
       "/api/auth/login",
+      "/api/auth/forgot-password",
+      "/api/auth/reset-password",
       "/api/auth/me (GET, PATCH)",
       "/api/dashboard?activityLimit=20",
       "/api/projects",

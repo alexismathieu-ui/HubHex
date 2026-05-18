@@ -31,9 +31,13 @@ const passwordSchema = z
     "Password must include at least one letter and one number.",
   );
 
+/** Verifie si un mot de passe respecte la politique actuelle (inscription / changement). */
+const passwordMeetsPolicy = (password) => passwordSchema.safeParse(password).success;
+
 module.exports = {
   escapeIlikePattern,
   parsePositiveInt,
   usernameSchema,
   passwordSchema,
+  passwordMeetsPolicy,
 };
