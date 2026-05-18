@@ -11,6 +11,12 @@ const createCommentSchema = z.object({
   content: z.string().trim().min(1).max(2000),
 });
 
+const listProjectsQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  technology: z.string().trim().max(80).optional(),
+  sort: z.enum(["recent", "popular"]).default("recent"),
+});
+
 const publicProjectFields = `
   p.id,
   p.title,
@@ -22,6 +28,55 @@ const publicProjectFields = `
   u.id AS author_id,
   u.username AS author_username
 `;
+
+const publicProjectListFields = `
+  ${publicProjectFields},
+  COALESCE(cc.comment_count, 0)::int AS comment_count
+`;
+
+const buildPublicProjectsQuery = (filters) => {
+  const conditions = ["p.visibility = 'public'"];
+  const values = [];
+  let index = 1;
+
+  if (filters.q) {
+    const pattern = `%${filters.q}%`;
+    conditions.push(`(
+      p.title ILIKE $${index}
+      OR p.description ILIKE $${index}
+      OR p.technologies ILIKE $${index}
+      OR u.username ILIKE $${index}
+    )`);
+    values.push(pattern);
+    index += 1;
+  }
+
+  if (filters.technology) {
+    conditions.push(`CONCAT(',', p.technologies, ',') ILIKE $${index}`);
+    values.push(`%,${filters.technology},%`);
+    index += 1;
+  }
+
+  const orderBy =
+    filters.sort === "popular"
+      ? "comment_count DESC, p.created_at DESC"
+      : "p.created_at DESC";
+
+  const query = `
+    SELECT ${publicProjectListFields}
+    FROM projects p
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN (
+      SELECT project_id, COUNT(*) AS comment_count
+      FROM comments
+      GROUP BY project_id
+    ) cc ON cc.project_id = p.id
+    WHERE ${conditions.join(" AND ")}
+    ORDER BY ${orderBy}
+  `;
+
+  return { query, values };
+};
 
 const fetchPublicProject = async (projectId) => {
   const result = await pool.query(
@@ -36,20 +91,23 @@ const fetchPublicProject = async (projectId) => {
 
 communityRouter.get("/projects", optionalAuthenticate, async (req, res, next) => {
   try {
-    const result = await pool.query(
-      `SELECT ${publicProjectFields}
-       FROM projects p
-       JOIN users u ON u.id = p.user_id
-       WHERE p.visibility = 'public'
-       ORDER BY p.created_at DESC`,
-    );
+    const filters = listProjectsQuerySchema.parse(req.query);
+    const { query, values } = buildPublicProjectsQuery(filters);
+    const result = await pool.query(query, values);
 
     const projects = result.rows.map((row) => ({
       ...row,
       is_mine: req.auth?.userId === row.author_id,
     }));
 
-    return res.status(200).json({ projects });
+    return res.status(200).json({
+      projects,
+      filters: {
+        q: filters.q ?? "",
+        technology: filters.technology ?? "",
+        sort: filters.sort,
+      },
+    });
   } catch (error) {
     return next(error);
   }

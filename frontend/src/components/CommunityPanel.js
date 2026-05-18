@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { TECH_TAGS } from "../data/techTags";
 import { API_BASE_URL } from "../lib/apiBaseUrl";
 import { formatApiError } from "../lib/formatApiError";
 
@@ -13,6 +14,9 @@ export function CommunityPanel({ token, currentUser }) {
   const [commentsByProject, setCommentsByProject] = useState({});
   const [commentsLoading, setCommentsLoading] = useState({});
   const [newComment, setNewComment] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [technologyFilter, setTechnologyFilter] = useState("");
+  const [sort, setSort] = useState("recent");
 
   const authHeaders = (json = true) => {
     const headers = {};
@@ -25,29 +29,67 @@ export function CommunityPanel({ token, currentUser }) {
     return headers;
   };
 
-  const loadProjects = useCallback(async () => {
-    setLoading(true);
-    setMessage("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/community/projects`, {
-        headers: authHeaders(false),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(formatApiError(data) || "Impossible de charger les projets publics.");
+  const loadProjects = useCallback(
+    async (overrides = {}) => {
+      setLoading(true);
+      setMessage("");
+      try {
+        const params = new URLSearchParams();
+        const q = overrides.q !== undefined ? overrides.q : searchQuery;
+        const technology =
+          overrides.technology !== undefined ? overrides.technology : technologyFilter;
+        const activeSort = overrides.sort !== undefined ? overrides.sort : sort;
+
+        if (q.trim()) {
+          params.set("q", q.trim());
+        }
+        if (technology) {
+          params.set("technology", technology);
+        }
+        if (activeSort === "popular") {
+          params.set("sort", "popular");
+        }
+
+        const queryString = params.toString();
+        const url = `${API_BASE_URL}/community/projects${queryString ? `?${queryString}` : ""}`;
+        const response = await fetch(url, {
+          headers: authHeaders(false),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(formatApiError(data) || "Impossible de charger les projets publics.");
+        }
+        setProjects(data.projects || []);
+      } catch (error) {
+        setMessage(error.message);
+        setProjects([]);
+      } finally {
+        setLoading(false);
       }
-      setProjects(data.projects || []);
-    } catch (error) {
-      setMessage(error.message);
-      setProjects([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+    },
+    [token, searchQuery, technologyFilter, sort],
+  );
 
   useEffect(() => {
     loadProjects();
-  }, [loadProjects]);
+  }, [token]);
+
+  const onSearchSubmit = (event) => {
+    event.preventDefault();
+    loadProjects();
+  };
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setTechnologyFilter("");
+    setSort("recent");
+    loadProjects({ q: "", technology: "", sort: "recent" });
+  };
+
+  const applyQuickSort = (nextSort) => {
+    setSort(nextSort);
+    loadProjects({ sort: nextSort });
+  };
 
   const loadComments = async (projectId) => {
     setCommentsLoading((prev) => ({ ...prev, [projectId]: true }));
@@ -162,6 +204,68 @@ export function CommunityPanel({ token, currentUser }) {
         </button>
       </div>
 
+      <form className="mt-4 flex flex-col gap-3 border-t border-sky-900/40 pt-4" onSubmit={onSearchSubmit}>
+        <p className="text-sm font-semibold uppercase tracking-wide text-sky-300/90">
+          Recherche & filtres
+        </p>
+        <input
+          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+          type="search"
+          placeholder="Mots-cles (titre, description, auteur, techno...)"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
+        <select
+          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+          value={technologyFilter}
+          onChange={(event) => setTechnologyFilter(event.target.value)}
+        >
+          <option value="">Toutes les technologies</option>
+          {TECH_TAGS.map((tag) => (
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
+          ))}
+        </select>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm ${
+              sort === "recent"
+                ? "bg-sky-500 font-semibold text-white"
+                : "border border-slate-600 text-slate-200 hover:border-slate-400"
+            }`}
+            type="button"
+            onClick={() => applyQuickSort("recent")}
+          >
+            Recents
+          </button>
+          <button
+            className={`rounded-lg px-3 py-1.5 text-sm ${
+              sort === "popular"
+                ? "bg-sky-500 font-semibold text-white"
+                : "border border-slate-600 text-slate-200 hover:border-slate-400"
+            }`}
+            type="button"
+            onClick={() => applyQuickSort("popular")}
+          >
+            Populaires
+          </button>
+          <button
+            className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:border-slate-400"
+            type="submit"
+          >
+            Rechercher
+          </button>
+          <button
+            className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:border-slate-500"
+            type="button"
+            onClick={resetFilters}
+          >
+            Reinitialiser
+          </button>
+        </div>
+      </form>
+
       <p className="mt-2 text-sm text-slate-400">{message}</p>
 
       {!token ? (
@@ -172,7 +276,9 @@ export function CommunityPanel({ token, currentUser }) {
 
       {projects.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
-          Aucun projet public pour le moment. Passe un de tes projets en visibilite « Public ».
+          {searchQuery || technologyFilter
+            ? "Aucun projet ne correspond a ta recherche."
+            : "Aucun projet public pour le moment. Passe un de tes projets en visibilite « Public »."}
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
@@ -191,6 +297,10 @@ export function CommunityPanel({ token, currentUser }) {
                   <p className="mt-2 text-sm text-slate-400">{project.description}</p>
                   <p className="mt-2 text-xs text-slate-500">
                     Techs: {project.technologies || "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {project.comment_count ?? 0} commentaire
+                    {(project.comment_count ?? 0) !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <button
