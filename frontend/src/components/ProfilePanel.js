@@ -70,8 +70,14 @@ export function ProfilePanel({ token, currentUser, onProfileUpdated }) {
     if (form.username.trim() !== currentUser.username) {
       body.username = form.username.trim();
     }
-    if (form.email.trim().toLowerCase() !== currentUser.email) {
+    const emailChanging = form.email.trim().toLowerCase() !== currentUser.email;
+    if (emailChanging) {
+      if (!form.currentPassword.trim()) {
+        setMessage("Indique ton mot de passe actuel pour changer d'email.");
+        return;
+      }
       body.email = form.email.trim();
+      body.currentPassword = form.currentPassword;
     }
     if (wantsPasswordChange) {
       body.currentPassword = form.currentPassword;
@@ -144,7 +150,9 @@ export function ProfilePanel({ token, currentUser, onProfileUpdated }) {
         />
 
         <div className="mt-2 border-t border-violet-900/50 pt-4">
-          <p className="text-sm font-medium text-slate-300">Changer le mot de passe (optionnel)</p>
+          <p className="text-sm font-medium text-slate-300">
+            Mot de passe actuel (obligatoire pour changer l&apos;email ou le mot de passe)
+          </p>
           <div className="mt-3 flex flex-col gap-3">
             <input
               className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
@@ -157,7 +165,7 @@ export function ProfilePanel({ token, currentUser, onProfileUpdated }) {
             <input
               className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
               type="password"
-              placeholder="Nouveau mot de passe (min. 8)"
+              placeholder="Nouveau mot de passe (8+ car., lettre + chiffre)"
               value={form.newPassword}
               onChange={(event) => setForm({ ...form, newPassword: event.target.value })}
               autoComplete="new-password"

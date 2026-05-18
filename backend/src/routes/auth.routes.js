@@ -5,14 +5,16 @@ const { z } = require("zod");
 
 const { pool } = require("../config/db");
 const { env } = require("../config/env");
+const { passwordSchema, usernameSchema } = require("../lib/security");
 const { authenticate } = require("../middlewares/authenticate");
+const { authLimiter } = require("../middlewares/rate-limiters");
 
 const authRouter = express.Router();
 
 const registerSchema = z.object({
-  username: z.string().trim().min(2).max(50),
+  username: usernameSchema,
   email: z.string().trim().email().max(255),
-  password: z.string().min(8).max(100),
+  password: passwordSchema,
 });
 
 const loginSchema = z.object({
@@ -22,10 +24,10 @@ const loginSchema = z.object({
 
 const updateProfileSchema = z
   .object({
-    username: z.string().trim().min(2).max(50).optional(),
+    username: usernameSchema.optional(),
     email: z.string().trim().email().max(255).optional(),
     currentPassword: z.string().min(1).max(100).optional(),
-    newPassword: z.string().min(8).max(100).optional(),
+    newPassword: passwordSchema.optional(),
   })
   .superRefine((data, ctx) => {
     const hasField =
@@ -48,18 +50,28 @@ const updateProfileSchema = z
         path: ["newPassword"],
       });
     }
+    if (data.email !== undefined && !data.currentPassword) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Current password is required to change email.",
+        path: ["currentPassword"],
+      });
+    }
   });
 
-authRouter.post("/register", async (req, res, next) => {
+authRouter.post("/register", authLimiter, async (req, res, next) => {
   try {
     const payload = registerSchema.parse(req.body);
     const normalizedEmail = payload.email.toLowerCase();
 
-    const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [
-      normalizedEmail,
-    ]);
+    const existingUser = await pool.query(
+      "SELECT id FROM users WHERE email = $1 OR username = $2",
+      [normalizedEmail, payload.username],
+    );
     if (existingUser.rows.length > 0) {
-      return res.status(409).json({ error: { message: "Email already used." } });
+      return res.status(409).json({
+        error: { message: "Unable to create account with these credentials." },
+      });
     }
 
     const passwordHash = await bcrypt.hash(payload.password, 10);
@@ -79,7 +91,7 @@ authRouter.post("/register", async (req, res, next) => {
   }
 });
 
-authRouter.post("/login", async (req, res, next) => {
+authRouter.post("/login", authLimiter, async (req, res, next) => {
   try {
     const payload = loginSchema.parse(req.body);
     const normalizedEmail = payload.email.toLowerCase();
@@ -102,7 +114,7 @@ authRouter.post("/login", async (req, res, next) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email, username: user.username },
       env.JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "7d", algorithm: "HS256" },
     );
 
     return res.status(200).json({
@@ -149,6 +161,29 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
       return res.status(404).json({ error: { message: "User not found." } });
     }
 
+    const needsPasswordCheck =
+      payload.email !== undefined || payload.newPassword !== undefined;
+
+    if (needsPasswordCheck) {
+      const isCurrentValid = await bcrypt.compare(
+        payload.currentPassword,
+        existing.password_hash,
+      );
+      if (!isCurrentValid) {
+        return res.status(401).json({ error: { message: "Current password is incorrect." } });
+      }
+    }
+
+    if (payload.username !== undefined && payload.username !== existing.username) {
+      const usernameTaken = await pool.query(
+        "SELECT id FROM users WHERE username = $1 AND id <> $2",
+        [payload.username, req.auth.userId],
+      );
+      if (usernameTaken.rows.length > 0) {
+        return res.status(409).json({ error: { message: "Username already used." } });
+      }
+    }
+
     if (payload.email !== undefined) {
       const normalizedEmail = payload.email.toLowerCase();
       if (normalizedEmail !== existing.email) {
@@ -159,16 +194,6 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
         if (emailTaken.rows.length > 0) {
           return res.status(409).json({ error: { message: "Email already used." } });
         }
-      }
-    }
-
-    if (payload.newPassword !== undefined) {
-      const isCurrentValid = await bcrypt.compare(
-        payload.currentPassword,
-        existing.password_hash,
-      );
-      if (!isCurrentValid) {
-        return res.status(401).json({ error: { message: "Current password is incorrect." } });
       }
     }
 
@@ -203,17 +228,18 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
     const identityChanged =
       (payload.username !== undefined && payload.username !== existing.username) ||
       (payload.email !== undefined && payload.email.toLowerCase() !== existing.email);
+    const passwordChanged = payload.newPassword !== undefined;
 
     const response = {
       message: "Profile updated successfully.",
       user,
     };
 
-    if (identityChanged) {
+    if (identityChanged || passwordChanged) {
       response.token = jwt.sign(
         { userId: user.id, email: user.email, username: user.username },
         env.JWT_SECRET,
-        { expiresIn: "7d" },
+        { expiresIn: "7d", algorithm: "HS256" },
       );
     }
 

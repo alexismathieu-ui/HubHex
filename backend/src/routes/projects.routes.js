@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 
 const { pool } = require("../config/db");
+const { parsePositiveInt } = require("../lib/security");
 const { authenticate } = require("../middlewares/authenticate");
 const { requireProjectOwner } = require("../middlewares/require-project-owner");
 const { tasksRouter } = require("./tasks.routes");
@@ -32,15 +33,15 @@ const normalizeTechnologies = (body) => {
 
 const createProjectSchema = z.object({
   title: z.string().trim().min(1).max(120),
-  description: z.string().trim().min(1),
-  technologies: z.array(z.string().trim().min(1).max(80)).default([]),
+  description: z.string().trim().min(1).max(20_000),
+  technologies: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
   visibility: visibilityEnum.default("private"),
 });
 
 const updateProjectSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
-  description: z.string().trim().min(1).optional(),
-  technologies: z.array(z.string().trim().min(1).max(80)).optional(),
+  description: z.string().trim().min(1).max(20_000).optional(),
+  technologies: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
   visibility: visibilityEnum.optional(),
 });
 
@@ -88,8 +89,8 @@ projectsRouter.get("/", async (req, res, next) => {
 
 projectsRouter.get("/:projectId", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    if (!Number.isInteger(projectId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
       return res.status(400).json({ error: { message: "Invalid project id." } });
     }
 
@@ -111,8 +112,8 @@ projectsRouter.get("/:projectId", async (req, res, next) => {
 
 projectsRouter.put("/:projectId", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    if (!Number.isInteger(projectId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
       return res.status(400).json({ error: { message: "Invalid project id." } });
     }
 
@@ -173,8 +174,8 @@ projectsRouter.put("/:projectId", async (req, res, next) => {
 
 projectsRouter.delete("/:projectId", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    if (!Number.isInteger(projectId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
       return res.status(400).json({ error: { message: "Invalid project id." } });
     }
 

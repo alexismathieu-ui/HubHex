@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const { env } = require("../config/env");
+const { parsePositiveInt } = require("../lib/security");
 
 const optionalAuthenticate = (req, _res, next) => {
   const authorizationHeader = req.headers.authorization;
@@ -10,9 +11,13 @@ const optionalAuthenticate = (req, _res, next) => {
 
   const token = authorizationHeader.slice(7);
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ["HS256"] });
+    const userId = parsePositiveInt(decoded.userId);
+    if (!userId) {
+      return next();
+    }
     req.auth = {
-      userId: decoded.userId,
+      userId,
       email: decoded.email,
       username: decoded.username,
     };

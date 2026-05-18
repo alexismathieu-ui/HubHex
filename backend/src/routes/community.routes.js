@@ -2,8 +2,13 @@ const express = require("express");
 const { z } = require("zod");
 
 const { pool } = require("../config/db");
+const { escapeIlikePattern, parsePositiveInt } = require("../lib/security");
 const { authenticate } = require("../middlewares/authenticate");
 const { optionalAuthenticate } = require("../middlewares/optional-authenticate");
+const {
+  commentLimiter,
+  communityReadLimiter,
+} = require("../middlewares/rate-limiters");
 
 const communityRouter = express.Router();
 
@@ -40,7 +45,7 @@ const buildPublicProjectsQuery = (filters) => {
   let index = 1;
 
   if (filters.q) {
-    const pattern = `%${filters.q}%`;
+    const pattern = `%${escapeIlikePattern(filters.q)}%`;
     conditions.push(`(
       p.title ILIKE $${index}
       OR p.description ILIKE $${index}
@@ -73,6 +78,7 @@ const buildPublicProjectsQuery = (filters) => {
     ) cc ON cc.project_id = p.id
     WHERE ${conditions.join(" AND ")}
     ORDER BY ${orderBy}
+    LIMIT 100
   `;
 
   return { query, values };
@@ -89,7 +95,7 @@ const fetchPublicProject = async (projectId) => {
   return result.rows[0] ?? null;
 };
 
-communityRouter.get("/projects", optionalAuthenticate, async (req, res, next) => {
+communityRouter.get("/projects", communityReadLimiter, optionalAuthenticate, async (req, res, next) => {
   try {
     const filters = listProjectsQuerySchema.parse(req.query);
     const { query, values } = buildPublicProjectsQuery(filters);
@@ -115,8 +121,8 @@ communityRouter.get("/projects", optionalAuthenticate, async (req, res, next) =>
 
 communityRouter.get("/projects/:projectId", optionalAuthenticate, async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    if (!Number.isInteger(projectId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
       return res.status(400).json({ error: { message: "Invalid project id." } });
     }
 
@@ -138,8 +144,8 @@ communityRouter.get("/projects/:projectId", optionalAuthenticate, async (req, re
 
 communityRouter.get("/projects/:projectId/comments", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    if (!Number.isInteger(projectId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
       return res.status(400).json({ error: { message: "Invalid project id." } });
     }
 
@@ -164,10 +170,14 @@ communityRouter.get("/projects/:projectId/comments", async (req, res, next) => {
   }
 });
 
-communityRouter.post("/projects/:projectId/comments", authenticate, async (req, res, next) => {
+communityRouter.post(
+  "/projects/:projectId/comments",
+  authenticate,
+  commentLimiter,
+  async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    if (!Number.isInteger(projectId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
       return res.status(400).json({ error: { message: "Invalid project id." } });
     }
 
@@ -193,16 +203,17 @@ communityRouter.post("/projects/:projectId/comments", authenticate, async (req, 
   } catch (error) {
     return next(error);
   }
-});
+  },
+);
 
 communityRouter.delete(
   "/projects/:projectId/comments/:commentId",
   authenticate,
   async (req, res, next) => {
     try {
-      const projectId = Number(req.params.projectId);
-      const commentId = Number(req.params.commentId);
-      if (!Number.isInteger(projectId) || !Number.isInteger(commentId)) {
+      const projectId = parsePositiveInt(req.params.projectId);
+      const commentId = parsePositiveInt(req.params.commentId);
+      if (!projectId || !commentId) {
         return res.status(400).json({ error: { message: "Invalid id." } });
       }
 

@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 
 const { pool } = require("../config/db");
+const { parsePositiveInt } = require("../lib/security");
 
 const tasksRouter = express.Router({ mergeParams: true });
 
@@ -22,7 +23,10 @@ const updateTaskSchema = z.object({
 
 tasksRouter.get("/", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
     const result = await pool.query(
       `SELECT id, project_id, title, description, status, sort_order, created_at, updated_at
        FROM tasks
@@ -46,7 +50,10 @@ tasksRouter.get("/", async (req, res, next) => {
 
 tasksRouter.post("/", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
     const payload = createTaskSchema.parse(req.body);
 
     const maxOrder = await pool.query(
@@ -70,9 +77,12 @@ tasksRouter.post("/", async (req, res, next) => {
 
 tasksRouter.put("/:taskId", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    const taskId = Number(req.params.taskId);
-    if (!Number.isInteger(taskId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
+    const taskId = parsePositiveInt(req.params.taskId);
+    if (!taskId) {
       return res.status(400).json({ error: { message: "Invalid task id." } });
     }
 
@@ -142,9 +152,12 @@ tasksRouter.put("/:taskId", async (req, res, next) => {
 
 tasksRouter.delete("/:taskId", async (req, res, next) => {
   try {
-    const projectId = Number(req.params.projectId);
-    const taskId = Number(req.params.taskId);
-    if (!Number.isInteger(taskId)) {
+    const projectId = parsePositiveInt(req.params.projectId);
+    if (!projectId) {
+      return res.status(400).json({ error: { message: "Invalid project id." } });
+    }
+    const taskId = parsePositiveInt(req.params.taskId);
+    if (!taskId) {
       return res.status(400).json({ error: { message: "Invalid task id." } });
     }
 

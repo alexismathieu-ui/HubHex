@@ -9,10 +9,16 @@ const { authRouter } = require("./routes/auth.routes");
 const { communityRouter } = require("./routes/community.routes");
 const { projectsRouter } = require("./routes/projects.routes");
 const { errorHandler } = require("./middlewares/error-handler");
+const { requireJsonBody } = require("./middlewares/require-json");
 const { healthRouter } = require("./routes/health.routes");
 
 const app = express();
 
+if (env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
+app.disable("x-powered-by");
 app.use(helmet());
 app.use(
   cors({
@@ -21,8 +27,9 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
-app.use(morgan("dev"));
+app.use(express.json({ limit: "100kb" }));
+app.use("/api", requireJsonBody);
+app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -31,7 +38,10 @@ app.use(
 );
 
 app.get("/", (_req, res) => {
-  res.json({
+  if (env.NODE_ENV === "production") {
+    return res.json({ name: "HubHex API", status: "ok" });
+  }
+  return res.json({
     name: "HubHex API",
     docs: [
       "/api/health",
@@ -54,14 +64,16 @@ app.use(errorHandler);
 
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api")) {
-    return res.status(404).json({
+    const payload = {
       error: {
-        message:
-          "Route API introuvable — verifie que le backend HubHex tourne depuis backend/src/server.js (pas un autre service sur le meme port).",
-        path: req.originalUrl,
-        method: req.method,
+        message: "Route API introuvable.",
       },
-    });
+    };
+    if (env.NODE_ENV === "development") {
+      payload.error.path = req.originalUrl;
+      payload.error.method = req.method;
+    }
+    return res.status(404).json(payload);
   }
   res.status(404).type("text").send("Not found");
 });

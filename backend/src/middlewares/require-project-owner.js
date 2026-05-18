@@ -1,8 +1,9 @@
 const { pool } = require("../config/db");
+const { parsePositiveInt } = require("../lib/security");
 
 const requireProjectOwner = async (req, res, next) => {
-  const projectId = Number(req.params.projectId);
-  if (!Number.isInteger(projectId)) {
+  const projectId = parsePositiveInt(req.params.projectId);
+  if (!projectId) {
     return res.status(400).json({ error: { message: "Invalid project id." } });
   }
 

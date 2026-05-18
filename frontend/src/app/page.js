@@ -128,7 +128,7 @@ export default function Home() {
             <div className="mt-4 flex flex-col gap-3">
               <input className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Nom d'utilisateur" value={registerForm.username} onChange={(event) => setRegisterForm({ ...registerForm, username: event.target.value })} required />
               <input className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2" type="email" placeholder="Email" value={registerForm.email} onChange={(event) => setRegisterForm({ ...registerForm, email: event.target.value })} required />
-              <input className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2" type="password" placeholder="Mot de passe (min 8)" value={registerForm.password} onChange={(event) => setRegisterForm({ ...registerForm, password: event.target.value })} required />
+              <input className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2" type="password" placeholder="Mot de passe (8+ car., lettre + chiffre)" value={registerForm.password} onChange={(event) => setRegisterForm({ ...registerForm, password: event.target.value })} required />
               <button className="rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950 hover:bg-cyan-300" type="submit">Creer un compte</button>
               <p className="text-sm text-slate-300">{registerMessage}</p>
             </div>
