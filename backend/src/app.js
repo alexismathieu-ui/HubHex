@@ -25,6 +25,9 @@ app.disable("x-powered-by");
 app.use(
   helmet({
     hsts: env.NODE_ENV === "production" ? { maxAge: 31_536_000, includeSubDomains: true } : false,
+    // Frontend (ex. :3000) et API (:4000) : same-site mais origines differentes — autoriser les avatars.
+    crossOriginResourcePolicy: { policy: "same-site" },
+    crossOriginEmbedderPolicy: false,
   }),
 );
 app.use(
@@ -35,7 +38,8 @@ app.use(
 );
 app.use((req, res, next) => {
   const isFileImport = /\/files\/import-batch/i.test(req.originalUrl);
-  const limit = isFileImport ? "20mb" : "100kb";
+  const isProfilePatch = /\/api\/auth\/me/i.test(req.originalUrl) && req.method === "PATCH";
+  const limit = isFileImport ? "20mb" : isProfilePatch ? "3mb" : "100kb";
   express.json({ limit })(req, res, next);
 });
 app.use("/api", requireJsonBody);

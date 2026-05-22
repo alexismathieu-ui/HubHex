@@ -1,0 +1,384 @@
+================================================================================
+HUBHEX — ETAT DU PROJET (fait / reste a faire)
+================================================================================
+Document genere le 22 mai 2026 — synthese du depot, du CDC (HubHex_plan_complet.txt),
+des commits Git et du travail realise (dont sessions agent : profil, Postman, avatars).
+
+Progression globale estimee pour la soutenance CDC : environ 60 a 65 % du cahier des charges
+fonctionnel de base ; livrables documentaires et differentiation nettement en retard (~10-20 %).
+
+================================================================================
+1. VISION ET ARCHITECTURE
+================================================================================
+
+HubHex = plateforme de gestion de projets dev (soutenance), type mini-GitHub interne :
+chaque depot est heberge sur HubHex (pas un lien GitHub externe), chemin public type :
+  username/slug-du-depot
+
+Stack :
+  - Frontend : Next.js 16 (App Router), React, Tailwind CSS — http://localhost:3000
+  - Backend  : Express 5, Node.js — http://localhost:4000
+  - BDD      : PostgreSQL (schema cree au demarrage via ensureDatabaseSchema())
+  - Auth     : JWT HS256 dans localStorage (cle hubhex_token), invalidation si changement MDP
+
+Monorepo :
+  HubHex/
+    backend/          API + scripts utilitaires
+    frontend/         Application Next.js
+    postman/          Collection + environnement pour tests API
+    http/             Fichier .http (alternative REST Client dans VS Code)
+    HubHex_plan_complet.txt   Plan CDC + differentiation (checklist)
+    README.md         Quasi vide (2 lignes seulement — A FAIRE)
+
+Demarrage :
+  Terminal 1 : cd backend && cp .env.example .env && npm install && npm run dev
+  Terminal 2 : cd frontend && npm install && npm run dev
+  .env backend : DATABASE_URL, JWT_SECRET (32+ car.), FRONTEND_URL, ALLOW_DEV_RESET_TOKEN
+
+================================================================================
+2. CE QUI A ETE FAIT — PAR ZONE
+================================================================================
+
+--------------------------------------------------------------------------------
+2.0 CADRE / INFRASTRUCTURE
+--------------------------------------------------------------------------------
+[x] Structure monorepo frontend + backend
+[x] PostgreSQL + pool pg + schema au boot (pas de migrations versionnees separees)
+[x] Variables d'environnement validees (Zod) — backend/src/config/env.js
+[x] Scripts npm dev (backend + frontend)
+[x] Application multi-pages responsive de base (layout, navigation, formulaires)
+[~] Logs : morgan en dev/combined en prod — pas de logs structures (winston/pino)
+[ ] README installation complet
+[ ] Depot GitHub documente / politique de contribution
+
+--------------------------------------------------------------------------------
+2.1 BASE DE DONNEES
+--------------------------------------------------------------------------------
+Tables en production au boot :
+
+  users
+    - id, username (unique), email (unique), password_hash, password_changed_at
+    - created_at
+    - Personnalisation profil : display_name, status_message, status_emoji
+    - avatar_mime, avatar_data (base64 en TEXT), profile_updated_at
+
+  projects
+    - titre, description, technologies, visibility (private/public)
+    - slug unique par utilisateur (user_id + slug)
+    - user_id, timestamps
+
+  tasks
+    - liees a project_id, statuts todo | in_progress | done, sort_order
+
+  comments
+    - communaute sur projets publics, user_id, contenu
+
+  password_reset_tokens
+    - token_hash SHA-256, expiration
+
+  project_repositories (LEGACY — liens GitHub externes)
+    - peu ou pas utilise cote UI depots actuelle
+
+  project_files
+    - arborescence : parent_id, kind file|folder, content, encoding text|base64
+    - mime_type, sort_order
+
+[x] Entites CDC de base (users, projects, tasks, comments)
+[x] Index utiles (projects, tasks, comments, files, slugs, username)
+[ ] Entite notes techniques separee
+[ ] Tables differentiation (stack vivante, journal, templates, graphe relations)
+[ ] Migrations SQL versionnees (fichiers par version)
+[ ] Export .sql livrable CDC a jour
+
+--------------------------------------------------------------------------------
+2.2 BACKEND — API (/api)
+--------------------------------------------------------------------------------
+[x] Serveur Express 5 + helmet + CORS liste blanche + JSON body (100kb, 3mb profil, 20mb import)
+[x] Gestion erreurs centralisee + 404 API explicite (path + method en dev)
+[x] GET /api/health
+[x] Liste endpoints en dev sur GET /
+
+AUTH (/api/auth) :
+[x] POST register — username, email, password (bcrypt cost 12)
+[x] POST login — JWT + infos user
+[x] POST forgot-password — message generique ; token dev si ALLOW_DEV_RESET_TOKEN=true
+[x] POST reset-password — token 64 car., hash en BDD
+[x] GET /me — profil complet + stats + activite recente (15 entrees)
+[x] PATCH /me — username, email (MDP actuel requis), MDP, pseudo, statut, avatar, clear_avatar
+[x] DELETE /me — suppression compte (MDP + confirmation SUPPRIMER), cascade FK
+
+UTILISATEURS (/api/users) :
+[x] GET /:username/public — profil public (pseudo, statut, stats reduites)
+[x] GET /:username/avatar — image binaire (CORP same-site pour affichage cross-port)
+
+PROJETS (/api/projects) :
+[x] CRUD projets (auth), slug auto/normalise, visibilite
+[x] Sous-route /:projectId/files — arborescence complete
+[x] Sous-route /:projectId/tasks — Kanban
+
+FICHIERS (/api/projects/:id/files) :
+[x] GET / — arbre + items
+[x] POST / — creer fichier/dossier
+[x] PATCH/DELETE /:fileId
+[x] POST /move, POST /paste, POST /import-batch
+[x] Limites : 10 Mo/fichier, 500 fichiers/depot, profondeur 20, import batch 80 entrees
+[x] Securite : validation base64, MIME, chemins (anti ..), rate limits dedies
+
+TACHES (/api/projects/:id/tasks) :
+[x] GET, POST, PUT, DELETE — colonnes Kanban par statut
+
+COMMUNAUTE (/api/community) :
+[x] GET /projects — liste publique, ?q= recherche, ?technology=, ?sort=recent|popular
+[x] GET /projects/:id — detail projet public
+[x] GET/POST /projects/:id/comments
+[x] DELETE commentaires (auteur ou proprietaire du projet)
+[x] Affichage auteur enrichi (display_name, statut, has_avatar) dans les requetes SQL
+[~] Moderation avancee / signalement — non implemente
+
+DASHBOARD (/api/dashboard) :
+[x] GET /?activityLimit= — resume projets/taches, projets recents, activite
+
+SECURITE :
+[x] bcrypt 12, JWT secret 32+ car. (Zod refuse exemple .env)
+[x] password_changed_at invalide les anciens JWT
+[x] authenticate + requireProjectOwner
+[x] Rate limits : auth, profil, commentaires, communaute, dashboard, fichiers, import
+[x] Helmet (CORP same-site + COEP off pour avatars frontend:3000 / API:4000)
+[x] Validation Zod sur routes principales
+[x] Scripts admin : reset-user-password.js, normalize-user-emails.js
+[ ] SMTP reel pour reset password
+[ ] 2FA, audit log
+[ ] Roles admin/moderateur formels
+[ ] Stockage fichiers object storage (S3) — actuellement TEXT PostgreSQL
+
+DIFFERENTIATION (CDC specifique HubHex) :
+[ ] Stack vivante (CRUD technologies enrichies)
+[ ] Journal de decisions
+[ ] Templates de projet
+[ ] Graphe / relations entre projets
+[ ] Endpoints associes
+
+--------------------------------------------------------------------------------
+2.3 FRONTEND — PAGES ET FONCTIONNALITES
+--------------------------------------------------------------------------------
+Navigation (AppShell + AppNav, routes protegees) :
+
+  /                      → redirection tableau de bord ou connexion
+  /connexion             → inscription + login + mot de passe oublie
+  /tableau-de-bord       → DashboardPanel
+  /depots                → DepotsList (creation, liste username/slug)
+  /depots/[id]           → DepotDetail — onglets Fichiers | Kanban | Parametres
+  /communaute            → CommunityPanel (recherche, filtres, commentaires)
+  /profil                → ProfilePanel
+
+[x] AuthContext — token localStorage, fetch /auth/me, login/logout/setSession
+[x] Inscription / connexion / deconnexion
+[x] Mot de passe oublie + reset (ForgotPasswordPanel, flux token dev)
+
+PROFIL (/profil) — travail recent (complet ~95 %) :
+[x] Pseudo (display_name), statut (emoji + message), photo profil (max 2 Mo)
+[x] Upload JPEG/PNG/WebP/GIF, suppression avatar
+[x] Modification username, email (MDP actuel), changement MDP
+[x] Stats (depots, taches, commentaires) + activite recente
+[x] Suppression de compte (zone danger)
+[x] UserAvatar reutilisable (nav, communaute, profil)
+[x] Avertissement si changement de username (impact chemin depots)
+[x] Correction affichage avatar (Helmet CORP + fallback initiales si erreur chargement)
+
+DEPOTS :
+[x] Liste + creation avec slug
+[x] Detail 3 onglets
+[x] Explorateur fichiers (DepotFileExplorer) — arbre, CRUD, drag & drop, import dossier
+[x] Import ZIP (decompresser ou garder tel quel) — fflate cote client
+[x] Copier/coller, move, paste, import batch
+[x] Binaires en base64
+[ ] Editeur de code dans l'UI
+[ ] Previsualisation / telechargement binaires dediee
+[ ] Liens project_repositories (composants ProjectRepo* existent mais non branches sur Depots)
+
+KANBAN :
+[x] TasksBoard — 3 colonnes, ajout/suppression/edition, changement statut (boutons)
+[~] Glisser-deposer — non implemente (CDC mentionnait drag & drop en option)
+
+COMMUNAUTE :
+[x] Liste projets publics, recherche, filtre technologie, tri recent/popular
+[x] Commentaires expand/collapse, ajout, suppression si droits
+[x] Avatars + pseudo + statut auteur sur projets et commentaires
+[~] Fiche projet public dediee (tout est inline dans la liste)
+
+DASHBOARD :
+[x] Compteurs projets/taches, listes recentes, activite
+[x] Salutation avec pseudo (getDisplayName)
+
+AUTRES :
+[x] TechTagPicker, liste techTags
+[x] formatApiError (Zod details)
+[x] Messages d'erreur profil en francais (profileErrorMessages)
+[ ] Page profil public autre utilisateur (/utilisateurs/:username)
+[ ] Notes techniques UI
+[ ] UI differentiation (stack, journal, templates, graphe)
+
+FICHIERS LEGACY / NETTOYAGE :
+[~] Composants racine frontend/src/components/ProjectsPanel.js, TasksBoard.js
+    mentionnes dans passation comme doublons — a verifier/supprimer si absents du repo actuel
+[~] Doublons ALTER TABLE profil dans db.js (colonnes declarees 2 fois — inoffensif mais a nettoyer)
+
+--------------------------------------------------------------------------------
+2.4 TESTS API / OUTILS DEVELOPPEMENT
+--------------------------------------------------------------------------------
+[x] Collection Postman : postman/HubHex.postman_collection.json
+[x] Environnement : postman/HubHex-local.postman_environment.json (baseUrl, token, email...)
+[x] Guide import VS Code : postman/IMPORT-VSCODE.txt
+[x] Alternative REST Client : http/hubhex.http
+[x] Recommandation extensions : .vscode/extensions.json
+[x] Login Postman avec script auto token ; requete Login testuser identifiants fixes
+[x] Depannage Postman documente (GET vs POST, environnement, email test@hubhex.dev)
+
+Utilisateurs connus en BDD locale (exemples) :
+  testuser     → test@hubhex.dev
+  demoUser2    → demouser2@hubhex.dev
+  persistUser  → persist@hubhex.dev
+  Tester 1     → testing@gmail.com
+  Pedro        → pedro@gmail.com
+  Beta         → beta@gmail.com (ou similaire)
+
+Script recuperation MDP :
+  cd backend
+  node scripts/reset-user-password.js <email> <NouveauMotDePasse1>
+
+--------------------------------------------------------------------------------
+2.5 SECURITE — BILAN
+--------------------------------------------------------------------------------
+[x] Points durcis (intervenant cyber mentionne en passation) : CORS, helmet, rate limits,
+    validation fichiers, reset token hash, JWT policy, refus JWT_SECRET exemple
+[~] Limites connues assumees a l'oral :
+    - JWT en localStorage (risque XSS)
+    - Pas d'email SMTP prod pour reset
+    - Fichiers en PostgreSQL TEXT
+    - Pas d'audit formel / pas de 2FA
+
+================================================================================
+3. CE QUI RESTE A FAIRE — PRIORISE
+================================================================================
+
+--------------------------------------------------------------------------------
+PRIORITE HAUTE (soutenance / CDC de base)
+--------------------------------------------------------------------------------
+[ ] README racine complet (install, config, lancement, structure, API resume)
+[ ] Documentation technique (architecture, schema BDD, liste endpoints)
+[ ] Documentation utilisateur (parcours, captures)
+[ ] Export base PostgreSQL .sql a jour
+[ ] Nettoyer db.js (doublons ALTER), fichiers legacy inutiles
+[ ] Verifier parcours demo bout en bout (inscription → depot → fichiers → kanban → public → commentaire)
+[ ] Slides / support de presentation
+[ ] Jeu de donnees demo (comptes + depots + taches + commentaires)
+
+--------------------------------------------------------------------------------
+PRIORITE MOYENNE (valeur produit + CDC partiel)
+--------------------------------------------------------------------------------
+[ ] Email SMTP pour reset password (nodemailer + templates)
+[ ] Editeur de code ou au moins editeur texte pour fichiers du depot
+[ ] Previsualisation images/PDF simple ; telechargement fichiers binaires
+[ ] Glisser-deposer Kanban (optionnel mais visible en demo)
+[ ] Page profil public frontend (/users/:username ou equivalent)
+[ ] Tests manuels checklist formalisee
+[ ] Tests automatises (API auth + projects au minimum)
+
+--------------------------------------------------------------------------------
+PRIORITE BASSE / DIFFERENTIATION CDC (gros morceau restant)
+--------------------------------------------------------------------------------
+[ ] Modele BDD + API + UI : stack vivante
+[ ] Journal de decisions par projet
+[ ] Templates (creation projet depuis modele)
+[ ] Graphe HubHex (visualisation relations projets)
+[ ] Entite notes techniques (si separee de description)
+[ ] Migrations SQL versionnees
+[ ] Moderation avancee (signalements, roles moderateur)
+[ ] Migration stockage fichiers vers object storage (optionnel)
+[ ] Cookie httpOnly / refresh token (renforcement securite)
+[ ] Accessibilite audit (WCAG de base)
+
+--------------------------------------------------------------------------------
+SCENARIO DEMO SOUTENANCE RECOMMANDE (5-10 min) — pas encore prepare
+--------------------------------------------------------------------------------
+1. Inscription ou connexion
+2. Creation depot + slug username/mon-depot
+3. Import fichiers ou ZIP
+4. Kanban (taches)
+5. Personnalisation profil (pseudo, photo, statut)
+6. Publication projet public + commentaire communaute
+7. (Si pret) element differentiation : template / journal / graphe
+8. Recherche communaute
+
+Phrase d'accroche a preparer : capitalisation technique + liens entre projets HubHex.
+
+================================================================================
+4. ESTIMATION PAR BLOC (%)
+================================================================================
+
+  Auth + profil + reset (partiel SMTP)     ~95 %
+  Projets / slugs / depots UI               ~90 %
+  Fichiers / import / arborescence         ~85 % (sans editeur)
+  Kanban                                   ~80 % (sans drag & drop)
+  Communaute + recherche                   ~75 %
+  Dashboard                                ~75 %
+  Securite de base                         ~80 %
+  Outils dev (Postman, scripts)            ~70 %
+  Livrables doc / SQL / README             ~10-15 %
+  Differentiation CDC                      ~0-5 %
+
+================================================================================
+5. FICHIERS POINT D'ENTREE (debug / reprise)
+================================================================================
+
+  Boot API          backend/src/server.js
+  Config env        backend/src/config/env.js
+  Schema BDD        backend/src/config/db.js
+  Auth JWT          backend/src/middlewares/authenticate.js, lib/auth-token.js
+  Profil API        backend/src/routes/auth.routes.js, lib/user-profile.js
+  Avatar            lib/avatar-security.js, routes/users.routes.js
+  Import fichiers   routes/files.routes.js, lib/project-files-import.js
+  Session front     frontend/src/context/AuthContext.js
+  Explorateur       components/depots/DepotFileExplorer.js
+  Profil UI         components/profile/ProfilePanel.js
+  Tests API         postman/HubHex.postman_collection.json
+
+================================================================================
+6. HISTORIQUE GIT RECENT (indicateur de travail deja commit)
+================================================================================
+
+  postman testAPI
+  Small Changes
+  Separated pages
+  Drag and drop + File manager
+  Changing My project
+  Forgot Password
+  DashBoard
+  Security add
+  Community search
+  Community Panel
+  Modification Profil base
+  Start + Register/Login + Setup BDD + Start of TaskBoard
+  first commit
+
+Travail session agent recent (peut etre non commit) :
+  - Profil complet (pseudo, statut, avatar, activite, suppression compte)
+  - Routes /api/users, lib user-profile, user-activity, avatar-security
+  - Limite avatar 2 Mo, fix Helmet CORP avatars
+  - Collection Postman + http/hubhex.http + guides
+  - Corrections validation profil, AppNav avatar
+
+================================================================================
+7. PROCHAINES ACTIONS SUGGEREES (ordre pratique)
+================================================================================
+
+  1. Commiter les changements profil/avatar/Postman si pas encore fait
+  2. Rédiger README + doc technique courte
+  3. Dump SQL + jeu de donnees demo
+  4. Preparer slides + scenario demo 5 min
+  5. Choisir 1 pilier differentiation (ex. journal OU templates) pour maximiser points CDC
+  6. Editeur fichier minimal OU telechargement binaire (quick win visible)
+
+================================================================================
+FIN DU DOCUMENT
+================================================================================

@@ -1,6 +1,14 @@
-const MAX_AVATAR_BYTES = 512 * 1024;
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const MIME_ALIASES = {
+  "image/jpg": "image/jpeg",
+};
+
+const ALLOWED_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+function normalizeMime(type) {
+  return MIME_ALIASES[type] || type;
+}
 
 export function readAvatarFile(file) {
   return new Promise((resolve, reject) => {
@@ -8,12 +16,13 @@ export function readAvatarFile(file) {
       reject(new Error("Aucun fichier selectionne."));
       return;
     }
-    if (!ALLOWED_TYPES.has(file.type)) {
+    const mime = normalizeMime(file.type);
+    if (!mime || !ALLOWED_MIMES.has(mime)) {
       reject(new Error("Format accepte : JPEG, PNG, WebP ou GIF."));
       return;
     }
     if (file.size > MAX_AVATAR_BYTES) {
-      reject(new Error("Image trop volumineuse (max 512 Ko)."));
+      reject(new Error("Image trop volumineuse (max 2 Mo)."));
       return;
     }
 
@@ -26,7 +35,7 @@ export function readAvatarFile(file) {
         return;
       }
       resolve({
-        mime: file.type,
+        mime,
         base64: result.slice(comma + 1),
         previewUrl: result,
       });

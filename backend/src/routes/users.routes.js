@@ -24,6 +24,7 @@ usersRouter.get("/:username/avatar", communityReadLimiter, async (req, res, next
       return res.status(404).end();
     }
     res.set("Content-Type", avatar.mime || "application/octet-stream");
+    res.set("Cross-Origin-Resource-Policy", "same-site");
     res.set("Cache-Control", "public, max-age=3600");
     return res.send(avatar.buffer);
   } catch (error) {

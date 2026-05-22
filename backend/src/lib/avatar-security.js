@@ -2,7 +2,7 @@ const { z } = require("zod");
 
 const { sanitizeMimeType, validateBase64Content } = require("./file-content-security");
 
-const MAX_AVATAR_RAW_BYTES = 512 * 1024;
+const MAX_AVATAR_RAW_BYTES = 2 * 1024 * 1024;
 
 const ALLOWED_AVATAR_MIMES = new Set([
   "image/jpeg",
@@ -26,7 +26,7 @@ const validateAvatarPayload = (base64, mimeType) => {
   }
   const estimatedRaw = Math.floor((content.length * 3) / 4);
   if (estimatedRaw > MAX_AVATAR_RAW_BYTES) {
-    const error = new Error("Image de profil trop volumineuse (max 512 Ko).");
+    const error = new Error("Image de profil trop volumineuse (max 2 Mo).");
     error.statusCode = 400;
     throw error;
   }

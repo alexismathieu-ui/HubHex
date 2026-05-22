@@ -320,7 +320,7 @@ export function ProfilePanel() {
                 Supprimer la photo
               </button>
             ) : null}
-            <span className="text-xs text-slate-500">JPEG, PNG, WebP ou GIF — max 512 Ko</span>
+            <span className="text-xs text-slate-500">JPEG, PNG, WebP ou GIF — max 2 Mo</span>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">

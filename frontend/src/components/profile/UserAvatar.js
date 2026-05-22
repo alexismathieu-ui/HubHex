@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { getDisplayName, getUserAvatarUrl } from "../../lib/auth/userDisplay";
 
 const SIZE_CLASSES = {
@@ -10,6 +12,7 @@ const SIZE_CLASSES = {
 };
 
 export function UserAvatar({ user, size = "md", previewSrc, className = "" }) {
+  const [loadFailed, setLoadFailed] = useState(false);
   const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.md;
   const avatarUrl =
     previewSrc ||
@@ -17,12 +20,17 @@ export function UserAvatar({ user, size = "md", previewSrc, className = "" }) {
   const label = getDisplayName(user) || user?.username || "?";
   const initial = (label[0] || "?").toUpperCase();
 
-  if (avatarUrl) {
+  useEffect(() => {
+    setLoadFailed(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !loadFailed) {
     return (
       <img
         src={avatarUrl}
         alt=""
         className={`${sizeClass} shrink-0 rounded-full border border-violet-800/60 object-cover ${className}`}
+        onError={() => setLoadFailed(true)}
       />
     );
   }
