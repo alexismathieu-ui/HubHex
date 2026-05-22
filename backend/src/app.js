@@ -10,6 +10,7 @@ const { authRouter } = require("./routes/auth.routes");
 const { communityRouter } = require("./routes/community.routes");
 const { dashboardRouter } = require("./routes/dashboard.routes");
 const { projectsRouter } = require("./routes/projects.routes");
+const { usersRouter } = require("./routes/users.routes");
 const { errorHandler } = require("./middlewares/error-handler");
 const { requireJsonBody } = require("./middlewares/require-json");
 const { healthRouter } = require("./routes/health.routes");
@@ -61,7 +62,9 @@ app.get("/", (_req, res) => {
       "/api/auth/login",
       "/api/auth/forgot-password",
       "/api/auth/reset-password",
-      "/api/auth/me (GET, PATCH)",
+      "/api/auth/me (GET, PATCH, DELETE)",
+      "/api/users/:username/public",
+      "/api/users/:username/avatar",
       "/api/dashboard?activityLimit=20",
       "/api/projects (slug sur POST/PUT)",
       "/api/projects/:projectId/files/import-batch",
@@ -75,6 +78,7 @@ app.get("/", (_req, res) => {
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/users", usersRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/community", communityRouter);
 

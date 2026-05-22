@@ -1,110 +1,107 @@
 ================================================================================
-HUBHEX — PLAN COMPLET DU PROJET (CDC + DIFFÉRENCIATION)
+HUBHEX ï¿½ PLAN COMPLET DU PROJET (CDC + DIFFï¿½RENCIATION)
 ================================================================================
-Document de travail : tout ce qu’il y a à faire / à livrer, regroupé en blocs.
-À cocher au fur et à mesure ([ ] ? [x]).
+Document de travail : tout ce quï¿½il y a ï¿½ faire / ï¿½ livrer, regroupï¿½ en blocs.
+ï¿½ cocher au fur et ï¿½ mesure ([ ] ? [x]).
 
 --------------------------------------------------------------------------------
 0. AVANT / CADRE
 --------------------------------------------------------------------------------
-[ ] Créer le dépôt GitHub du projet (code public ou privé selon consignes).
+[ ] Crï¿½er le dï¿½pï¿½t GitHub du projet (code public ou privï¿½ selon consignes).
 [ ] Initialiser la structure : frontend (React ou Next.js) + backend (Node.js).
-[ ] Configurer PostgreSQL (local puis éventuellement hébergement).
-[ ] Variables d’environnement (.env) : URL BDD, secrets JWT/session, etc.
+[ ] Configurer PostgreSQL (local puis ï¿½ventuellement hï¿½bergement).
+[ ] Variables dï¿½environnement (.env) : URL BDD, secrets JWT/session, etc.
 [ ] Respect strict des contraintes : React/Next + HTML/CSS/JS, Node API, PostgreSQL.
 [ ] Application responsive (ordinateur, tablette, smartphone).
-[ ] Système de logs (backend au minimum ; frontend utile pour erreurs API).
+[ ] Systï¿½me de logs (backend au minimum ; frontend utile pour erreurs API).
 
 --------------------------------------------------------------------------------
-1. BASE DE DONNÉES (PostgreSQL)
+1. BASE DE DONNï¿½ES (PostgreSQL)
 --------------------------------------------------------------------------------
-[ ] Modéliser les entités du CDC :
-    - Utilisateurs (profil, mot de passe hashé, rôles si modération avancée)
-    - Projets (titre, description, technologies, visibilité public/privé, auteur…)
-    - Tâches (liées à un projet, statut/colonne type Kanban, ordre éventuel)
-    - Notes techniques (liées à un projet, si séparées des “description”)
-    - Commentaires (liés à un projet public ou aux contenus concernés)
-[ ] Tables / champs pour la partie communautaire + découverte (index recherche).
-[ ] Schéma pour la DIFFÉRENCIATION :
+[ ] Modï¿½liser les entitï¿½s du CDC :
+    - Utilisateurs (profil, mot de passe hashï¿½, rï¿½les si modï¿½ration avancï¿½e)
+    - Projets (titre, description, technologies, visibilitï¿½ public/privï¿½, auteurï¿½)
+    - Tï¿½ches (liï¿½es ï¿½ un projet, statut/colonne type Kanban, ordre ï¿½ventuel)
+    - Notes techniques (liï¿½es ï¿½ un projet, si sï¿½parï¿½es des ï¿½descriptionï¿½)
+    - Commentaires (liï¿½s ï¿½ un projet public ou aux contenus concernï¿½s)
+[ ] Tables / champs pour la partie communautaire + dï¿½couverte (index recherche).
+[ ] Schï¿½ma pour la DIFFï¿½RENCIATION :
     - Stack vivante : technologies enrichies (lien, statut/niveau, snippet optionnel)
-    - Journal de décisions : entrées datées liées au projet (texte, date, auteur)
-    - Templates : modèles de projet (métadonnées + structure tâches/colonnes par défaut)
-    - Graphe HubHex : relations entre projets (ex. même techno, même auteur,
-      lien “inspiré de / suite de” — à définir dans le modèle)
-[ ] Migrations ou scripts SQL versionnés.
-[ ] Export .sql de la base (livrable CDC) — dump à jour en fin de projet.
+    - Journal de dï¿½cisions : entrï¿½es datï¿½es liï¿½es au projet (texte, date, auteur)
+    - Templates : modï¿½les de projet (mï¿½tadonnï¿½es + structure tï¿½ches/colonnes par dï¿½faut)
+    - Graphe HubHex : relations entre projets (ex. mï¿½me techno, mï¿½me auteur,
+      lien ï¿½inspirï¿½ de / suite deï¿½ ï¿½ ï¿½ dï¿½finir dans le modï¿½le)
+[ ] Migrations ou scripts SQL versionnï¿½s.
+[ ] Export .sql de la base (livrable CDC) ï¿½ dump ï¿½ jour en fin de projet.
 
 --------------------------------------------------------------------------------
 2. BACKEND (API Node.js)
 --------------------------------------------------------------------------------
-[ ] Serveur HTTP (Express, Fastify, ou équivalent) + CORS + parsing JSON.
+[ ] Serveur HTTP (Express, Fastify, ou ï¿½quivalent) + CORS + parsing JSON.
 [ ] Authentification : inscription, connexion, sessions ou JWT (selon choix).
-[ ] Hash des mots de passe (bcrypt ou argon2 — jamais en clair).
-[ ] Routes CRUD projets (titre, description, technologies, visibilité).
-[ ] Routes CRUD tâches + mise à jour statut / colonnes Kanban.
-[ ] Routes notes techniques (si entité séparée).
-[ ] Partie communautaire : consultation projets publics, commentaires (CRUD modéré).
-[ ] Recherche : mots-clés + filtres (technos, auteur, date, visibilité…).
-[ ] Dashboard : endpoints agrégés (projets de l’utilisateur, activité récente).
-[ ] Modération : signalement, suppression/modération commentaires (selon CDC).
-[ ] Gestion d’erreurs centralisée + codes HTTP cohérents.
-[ ] Logs structurés (niveau info/warn/error, corrélation requête utile).
-[ ] Endpoints DIFFÉRENCIATION :
-    - CRUD ou lecture/écriture “stack vivante” + journal de décisions
-    - Liste / application d’un template (création projet à partir d’un modèle)
-    - Données pour la vue graphe (liste nœuds/arêtes ou projets + relations calculées)
+[ ] Hash des mots de passe (bcrypt ou argon2 ï¿½ jamais en clair).
+[ ] Routes CRUD projets (titre, description, technologies, visibilitï¿½).
+[ ] Routes CRUD tï¿½ches + mise ï¿½ jour statut / colonnes Kanban.
+[ ] Routes notes techniques (si entitï¿½ sï¿½parï¿½e).
+[ ] Partie communautaire : consultation projets publics, commentaires (CRUD modï¿½rï¿½).
+[ ] Recherche : mots-clï¿½s + filtres (technos, auteur, date, visibilitï¿½).
+[ ] Dashboard : endpoints agrï¿½gï¿½s (projets de lï¿½utilisateur, activitï¿½ rï¿½cente).
+[ ] Modï¿½ration : signalement, suppression/modï¿½ration commentaires (selon CDC).
+[ ] Gestion dï¿½erreurs centralisï¿½e + codes HTTP cohï¿½rents.
+[ ] Logs structurï¿½s (niveau info/warn/error, corrï¿½lation requï¿½te utile).
+[ ] Endpoints DIFFï¿½RENCIATION :
+    - CRUD ou lecture/ï¿½criture ï¿½stack vivanteï¿½ + journal de dï¿½cisions
+    - Liste / application dï¿½un template (crï¿½ation projet ï¿½ partir dï¿½un modï¿½le)
+    - Donnï¿½es pour la vue graphe (liste nï¿½uds/arï¿½tes ou projets + relations calculï¿½es)
 
 --------------------------------------------------------------------------------
 3. FRONTEND (React ou Next.js)
 --------------------------------------------------------------------------------
 [ ] Pages / layout responsive (navigation, footer si besoin).
-[ ] Auth UI : inscription, connexion, déconnexion, modification du profil.
-[ ] CRUD projets (formulaires, liste, détail).
-[ ] Kanban : colonnes, glisser-déposer ou boutons de changement de statut.
-[ ] Notes techniques (affichage / édition selon modèle BDD).
-[ ] Espace communautaire : découverte, fiche projet public, commentaires.
-[ ] Recherche + filtres (UI reliée aux endpoints).
-[ ] Dashboard personnel (résumé projets + activité).
-[ ] États de chargement, messages d’erreur utilisateur, formulaires validés.
-[ ] UI DIFFÉRENCIATION :
-    - Écran détail projet : stack vivante (liens, statuts, snippets) + journal
-    - Flux “créer depuis un template” (choix du modèle ? projet pré-rempli)
-    - Page ou onglet “HubHex” : visualisation graphe (projets + liens)
-[ ] Accessibilité de base (labels, focus, contrastes raisonnables) — recommandé.
+[ ] Auth UI : inscription, connexion, dï¿½connexion, modification du profil.
+[ ] CRUD projets (formulaires, liste, dï¿½tail).
+[ ] Kanban : colonnes, glisser-dï¿½poser ou boutons de changement de statut.
+[ ] Notes techniques (affichage / ï¿½dition selon modï¿½le BDD).
+[ ] Espace communautaire : dï¿½couverte, fiche projet public, commentaires.
+[ ] Recherche + filtres (UI reliï¿½e aux endpoints).
+[ ] Dashboard personnel (rï¿½sumï¿½ projets + activitï¿½).
+[ ] ï¿½tats de chargement, messages dï¿½erreur utilisateur, formulaires validï¿½s.
+[ ] UI DIFFï¿½RENCIATION :
+    - ï¿½cran dï¿½tail projet : stack vivante (liens, statuts, snippets) + journal
+    - Flux ï¿½crï¿½er depuis un templateï¿½ (choix du modï¿½le ? projet prï¿½-rempli)
+    - Page ou onglet ï¿½HubHexï¿½ : visualisation graphe (projets + liens)
+[ ] Accessibilitï¿½ de base (labels, focus, contrastes raisonnables) ï¿½ recommandï¿½.
 
 --------------------------------------------------------------------------------
-4. SÉCURITÉ (CDC)
+4. Sï¿½CURITï¿½ (CDC)
 --------------------------------------------------------------------------------
-[ ] Mots de passe jamais stockés en clair ; politique de hash robuste.
-[ ] Protection routes privées (token/session + middleware).
-[ ] Validation et assainissement des entrées (côté API).
+[ ] Mots de passe jamais stockï¿½s en clair ; politique de hash robuste.
+[ ] Protection routes privï¿½es (token/session + middleware).
+[ ] Validation et assainissement des entrï¿½es (cï¿½tï¿½ API).
 [ ] Limitation abus simple (rate limit basique sur auth/commentaires si possible).
-[ ] Modération conforme au CDC (rôles admin/modérateur ou règles définies).
+[ ] Modï¿½ration conforme au CDC (rï¿½les admin/modï¿½rateur ou rï¿½gles dï¿½finies).
 
 --------------------------------------------------------------------------------
-5. QUALITÉ / EXPLOITATION
+5. QUALITï¿½ / EXPLOITATION
 --------------------------------------------------------------------------------
 [ ] README racine : comment installer, lancer BDD, backend, frontend.
 [ ] Scripts npm (dev, build, migrate si applicable).
-[ ] Jeux de données de démo (optionnel mais utile pour la soutenance).
-[ ] Vérification manuelle des parcours critiques (auth, CRUD, Kanban, public).
+[ ] Jeux de donnï¿½es de dï¿½mo (optionnel mais utile pour la soutenance).
+[ ] Vï¿½rification manuelle des parcours critiques (auth, CRUD, Kanban, public).
 
 --------------------------------------------------------------------------------
 6. LIVRABLES DOCUMENTAIRES (CDC)
 --------------------------------------------------------------------------------
-[ ] Documentation utilisateur (prise en main, fonctionnalités, captures).
-[ ] Documentation technique (architecture, stack, schéma BDD, API principales).
-[ ] Support de présentation (slides ou équivalent).
-[ ] Export base .sql à jour.
+[ ] Documentation utilisateur (prise en main, fonctionnalitï¿½s, captures).
+[ ] Documentation technique (architecture, stack, schï¿½ma BDD, API principales).
+[ ] Support de prï¿½sentation (slides ou ï¿½quivalent).
+[ ] Export base .sql ï¿½ jour.
 [ ] Code source complet (frontend + backend) sur GitHub.
 
 --------------------------------------------------------------------------------
-7. SOUTENANCE / DÉMO (RECOMMANDÉ)
+7. SOUTENANCE / Dï¿½MO (RECOMMANDï¿½)
 --------------------------------------------------------------------------------
-[ ] Scénario de démo 5–10 min : inscription ? template ? Kanban ? stack + journal
+[ ] Scï¿½nario de dï¿½mo 5ï¿½10 min : inscription ? template ? Kanban ? stack + journal
       ? publication ? commentaire ? graphe ? recherche.
-[ ] Une phrase d’accroche : capitalisation technique + liens entre projets.
+[ ] Une phrase dï¿½accroche : capitalisation technique + liens entre projets.
 
-================================================================================
-FIN DU FICHIER — À ADAPTER SI TES CONSIGNES PÉDAGOGIQUES PRÉCISENT AUTRE CHOSE
-================================================================================

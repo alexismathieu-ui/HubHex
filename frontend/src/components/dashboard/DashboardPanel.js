@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "../../context/AuthContext";
+import { getDisplayName } from "../../lib/auth/userDisplay";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { formatApiError } from "../../lib/formatApiError";
 
@@ -70,7 +71,7 @@ export function DashboardPanel() {
         <div>
           <h1 className="text-2xl font-semibold text-amber-200">Tableau de bord</h1>
           <p className="mt-1 text-sm text-amber-300/80">
-            Bonjour {currentUser.username} — vue d&apos;ensemble de ton espace.
+            Bonjour {getDisplayName(currentUser)} — vue d&apos;ensemble de ton espace.
           </p>
         </div>
         <button

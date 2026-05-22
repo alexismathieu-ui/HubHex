@@ -10,11 +10,14 @@ const {
   hashResetToken,
   resetTokenExpiresAt,
 } = require("../lib/password-reset");
+const { avatarMimeSchema, validateAvatarPayload } = require("../lib/avatar-security");
 const { passwordSchema, usernameSchema, passwordMeetsPolicy } = require("../lib/security");
+const { fetchUserProfile } = require("../lib/user-profile");
 const { authenticate } = require("../middlewares/authenticate");
 const {
   authLimiter,
   forgotPasswordLimiter,
+  profileLimiter,
   resetPasswordLimiter,
 } = require("../middlewares/rate-limiters");
 
@@ -43,22 +46,61 @@ const resetPasswordSchema = z.object({
 const GENERIC_RESET_MESSAGE =
   "Si un compte existe avec cet email, un code de reinitialisation a ete genere.";
 
+const optionalTextField = (max) =>
+  z
+    .union([z.string().trim().max(max), z.literal(""), z.null()])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) {
+        return undefined;
+      }
+      if (value === "" || value === null) {
+        return null;
+      }
+      return value;
+    });
+
 const updateProfileSchema = z
   .object({
     username: usernameSchema.optional(),
     email: z.string().trim().email().max(255).optional(),
     currentPassword: z.string().min(1).max(100).optional(),
     newPassword: passwordSchema.optional(),
+    display_name: optionalTextField(80),
+    status_message: optionalTextField(120),
+    status_emoji: optionalTextField(12),
+    clear_avatar: z.boolean().optional(),
+    avatar_base64: z.string().optional(),
+    avatar_mime: avatarMimeSchema.optional(),
   })
   .superRefine((data, ctx) => {
     const hasField =
       data.username !== undefined ||
       data.email !== undefined ||
-      data.newPassword !== undefined;
+      data.newPassword !== undefined ||
+      data.display_name !== undefined ||
+      data.status_message !== undefined ||
+      data.status_emoji !== undefined ||
+      data.clear_avatar === true ||
+      data.avatar_base64 !== undefined;
+    if (data.avatar_base64 !== undefined && !data.avatar_mime) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Le type MIME est requis avec l'image.",
+        path: ["avatar_mime"],
+      });
+    }
+    if (data.clear_avatar && data.avatar_base64) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Impossible de supprimer et d'envoyer une image en meme temps.",
+        path: ["clear_avatar"],
+      });
+    }
     if (!hasField) {
       ctx.addIssue({
         code: "custom",
-        message: "No profile data to update.",
+        message: "Aucune donnee de profil a mettre a jour.",
         path: [],
       });
     }
@@ -67,18 +109,23 @@ const updateProfileSchema = z
     if (changingPassword && (!data.currentPassword || !data.newPassword)) {
       ctx.addIssue({
         code: "custom",
-        message: "Current and new password are both required to change password.",
+        message: "Le mot de passe actuel et le nouveau sont requis.",
         path: ["newPassword"],
       });
     }
     if (data.email !== undefined && !data.currentPassword) {
       ctx.addIssue({
         code: "custom",
-        message: "Current password is required to change email.",
+        message: "Le mot de passe actuel est requis pour changer l'email.",
         path: ["currentPassword"],
       });
     }
   });
+
+const deleteAccountSchema = z.object({
+  password: z.string().min(1).max(100),
+  confirmation: z.literal("SUPPRIMER"),
+});
 
 authRouter.post("/register", authLimiter, async (req, res, next) => {
   try {
@@ -118,7 +165,9 @@ authRouter.post("/login", authLimiter, async (req, res, next) => {
     const normalizedEmail = payload.email.toLowerCase();
 
     const result = await pool.query(
-      "SELECT id, username, email, password_hash FROM users WHERE LOWER(email) = $1",
+      `SELECT id, username, email, password_hash, display_name, status_message, status_emoji,
+              (avatar_data IS NOT NULL AND avatar_data <> '') AS has_avatar_data
+       FROM users WHERE LOWER(email) = $1`,
       [normalizedEmail],
     );
 
@@ -140,6 +189,10 @@ authRouter.post("/login", authLimiter, async (req, res, next) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        display_name: user.display_name ?? null,
+        status_message: user.status_message ?? null,
+        status_emoji: user.status_emoji ?? null,
+        has_avatar: Boolean(user.has_avatar_data),
       },
       password_needs_upgrade: !passwordMeetsPolicy(payload.password),
     });
@@ -232,14 +285,9 @@ authRouter.post("/reset-password", resetPasswordLimiter, async (req, res, next) 
 
 authRouter.get("/me", authenticate, async (req, res, next) => {
   try {
-    const result = await pool.query(
-      "SELECT id, username, email, created_at FROM users WHERE id = $1",
-      [req.auth.userId],
-    );
-
-    const user = result.rows[0];
+    const user = await fetchUserProfile(req.auth.userId);
     if (!user) {
-      return res.status(404).json({ error: { message: "User not found." } });
+      return res.status(404).json({ error: { message: "Utilisateur introuvable." } });
     }
 
     return res.status(200).json({ user });
@@ -248,7 +296,7 @@ authRouter.get("/me", authenticate, async (req, res, next) => {
   }
 });
 
-authRouter.patch("/me", authenticate, async (req, res, next) => {
+authRouter.patch("/me", authenticate, profileLimiter, async (req, res, next) => {
   try {
     const payload = updateProfileSchema.parse(req.body);
 
@@ -258,7 +306,7 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
     );
     const existing = existingResult.rows[0];
     if (!existing) {
-      return res.status(404).json({ error: { message: "User not found." } });
+      return res.status(404).json({ error: { message: "Utilisateur introuvable." } });
     }
 
     const needsPasswordCheck =
@@ -270,7 +318,7 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
         existing.password_hash,
       );
       if (!isCurrentValid) {
-        return res.status(401).json({ error: { message: "Current password is incorrect." } });
+        return res.status(401).json({ error: { message: "Mot de passe actuel incorrect." } });
       }
     }
 
@@ -280,7 +328,7 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
         [payload.username, req.auth.userId],
       );
       if (usernameTaken.rows.length > 0) {
-        return res.status(409).json({ error: { message: "Username already used." } });
+        return res.status(409).json({ error: { message: "Ce nom d'utilisateur est deja pris." } });
       }
     }
 
@@ -292,7 +340,7 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
           [normalizedEmail, req.auth.userId],
         );
         if (emailTaken.rows.length > 0) {
-          return res.status(409).json({ error: { message: "Email already used." } });
+          return res.status(409).json({ error: { message: "Cet email est deja utilise." } });
         }
       }
     }
@@ -316,6 +364,39 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
       fields.push("password_changed_at = NOW()");
     }
 
+    const customizationChanged =
+      payload.display_name !== undefined ||
+      payload.status_message !== undefined ||
+      payload.status_emoji !== undefined ||
+      payload.clear_avatar === true ||
+      payload.avatar_base64 !== undefined;
+
+    if (payload.display_name !== undefined) {
+      fields.push(`display_name = $${index++}`);
+      values.push(payload.display_name);
+    }
+    if (payload.status_message !== undefined) {
+      fields.push(`status_message = $${index++}`);
+      values.push(payload.status_message);
+    }
+    if (payload.status_emoji !== undefined) {
+      fields.push(`status_emoji = $${index++}`);
+      values.push(payload.status_emoji);
+    }
+    if (payload.clear_avatar === true) {
+      fields.push("avatar_mime = NULL");
+      fields.push("avatar_data = NULL");
+    } else if (payload.avatar_base64 !== undefined) {
+      const avatar = validateAvatarPayload(payload.avatar_base64, payload.avatar_mime);
+      fields.push(`avatar_mime = $${index++}`);
+      values.push(avatar.mime);
+      fields.push(`avatar_data = $${index++}`);
+      values.push(avatar.content);
+    }
+    if (customizationChanged) {
+      fields.push("profile_updated_at = NOW()");
+    }
+
     values.push(req.auth.userId);
     const updateQuery = `
       UPDATE users
@@ -324,7 +405,8 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
       RETURNING id, username, email, created_at
     `;
     const updateResult = await pool.query(updateQuery, values);
-    const user = updateResult.rows[0];
+    const updatedUser = updateResult.rows[0];
+    const user = await fetchUserProfile(updatedUser.id);
 
     const identityChanged =
       (payload.username !== undefined && payload.username !== existing.username) ||
@@ -332,15 +414,43 @@ authRouter.patch("/me", authenticate, async (req, res, next) => {
     const passwordChanged = payload.newPassword !== undefined;
 
     const response = {
-      message: "Profile updated successfully.",
+      message: "Profil mis a jour avec succes.",
       user,
     };
 
     if (identityChanged || passwordChanged) {
-      response.token = signAccessToken(user);
+      response.token = signAccessToken(updatedUser);
     }
 
     return res.status(200).json(response);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.delete("/me", authenticate, profileLimiter, async (req, res, next) => {
+  try {
+    const payload = deleteAccountSchema.parse(req.body);
+
+    const existingResult = await pool.query(
+      "SELECT id, password_hash FROM users WHERE id = $1",
+      [req.auth.userId],
+    );
+    const existing = existingResult.rows[0];
+    if (!existing) {
+      return res.status(404).json({ error: { message: "Utilisateur introuvable." } });
+    }
+
+    const isPasswordValid = await bcrypt.compare(payload.password, existing.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: { message: "Mot de passe incorrect." } });
+    }
+
+    await pool.query("DELETE FROM users WHERE id = $1", [req.auth.userId]);
+
+    return res.status(200).json({
+      message: "Compte supprime definitivement.",
+    });
   } catch (error) {
     return next(error);
   }

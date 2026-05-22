@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "../../context/AuthContext";
+import { getDisplayName } from "../../lib/auth/userDisplay";
+import { UserAvatar } from "../profile/UserAvatar";
 
 const NAV_ITEMS = [
   { href: "/tableau-de-bord", label: "Tableau de bord" },
@@ -46,9 +48,13 @@ export function AppNav() {
         <div className="flex items-center gap-3 text-sm">
           {currentUser ? (
             <>
-              <span className="hidden text-slate-500 sm:inline">
-                {currentUser.username}
-              </span>
+              <Link
+                href="/profil"
+                className="hidden items-center gap-2 rounded-md px-2 py-1 text-slate-400 hover:bg-slate-900 hover:text-violet-200 sm:inline-flex"
+              >
+                <UserAvatar user={currentUser} size="sm" />
+                <span className="max-w-[140px] truncate">{getDisplayName(currentUser)}</span>
+              </Link>
               <button
                 type="button"
                 onClick={logout}

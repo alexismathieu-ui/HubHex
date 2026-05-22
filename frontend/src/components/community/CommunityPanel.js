@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "../../context/AuthContext";
+import { getDisplayName, getStatusLabel } from "../../lib/auth/userDisplay";
 import { depotPath } from "../../lib/depots/depotUtils";
+import { UserAvatar } from "../profile/UserAvatar";
 import { TECH_TAGS } from "../../data/techTags";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { formatApiError } from "../../lib/formatApiError";
@@ -296,10 +298,35 @@ export function CommunityPanel() {
                     {depotPath(project.author_username, project.slug)}
                   </p>
                   <p className="mt-1 text-lg font-semibold text-slate-100">{project.title}</p>
-                  <p className="mt-1 text-xs text-sky-300">
-                    Par {project.author_username}
-                    {project.is_mine ? " (ton depot)" : ""}
-                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <UserAvatar
+                      user={{
+                        username: project.author_username,
+                        has_avatar: project.author_has_avatar,
+                      }}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="text-xs text-sky-300">
+                        Par {getDisplayName({
+                          username: project.author_username,
+                          display_name: project.author_display_name,
+                        })}
+                        {project.is_mine ? " (ton depot)" : ""}
+                      </p>
+                      {getStatusLabel({
+                        status_emoji: project.author_status_emoji,
+                        status_message: project.author_status_message,
+                      }) ? (
+                        <p className="text-xs text-slate-500">
+                          {getStatusLabel({
+                            status_emoji: project.author_status_emoji,
+                            status_message: project.author_status_message,
+                          })}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
                   <p className="mt-2 text-sm text-slate-400">{project.description}</p>
                   <p className="mt-2 text-xs text-slate-500">
                     Techs: {project.technologies || "—"}
@@ -335,9 +362,21 @@ export function CommunityPanel() {
                           key={comment.id}
                           className="rounded-md border border-slate-800 bg-slate-900/80 px-3 py-2"
                         >
-                          <p className="text-xs font-medium text-sky-300">
-                            {comment.author_username}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <UserAvatar
+                              user={{
+                                username: comment.author_username,
+                                has_avatar: comment.author_has_avatar,
+                              }}
+                              size="sm"
+                            />
+                            <p className="text-xs font-medium text-sky-300">
+                              {getDisplayName({
+                                username: comment.author_username,
+                                display_name: comment.author_display_name,
+                              })}
+                            </p>
+                          </div>
                           <p className="mt-1 text-sm text-slate-200">{comment.content}</p>
                           {canDeleteComment(project, comment) ? (
                             <button

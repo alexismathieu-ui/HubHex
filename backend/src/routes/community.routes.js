@@ -32,7 +32,11 @@ const publicProjectFields = `
   p.created_at,
   p.updated_at,
   u.id AS author_id,
-  u.username AS author_username
+  u.username AS author_username,
+  u.display_name AS author_display_name,
+  u.status_message AS author_status_message,
+  u.status_emoji AS author_status_emoji,
+  (u.avatar_data IS NOT NULL AND u.avatar_data <> '') AS author_has_avatar
 `;
 
 const publicProjectListFields = `
@@ -162,7 +166,11 @@ communityRouter.get("/projects/:projectId/comments", communityReadLimiter, async
 
     const result = await pool.query(
       `SELECT c.id, c.project_id, c.user_id, c.content, c.created_at, c.updated_at,
-              u.username AS author_username
+              u.username AS author_username,
+              u.display_name AS author_display_name,
+              u.status_message AS author_status_message,
+              u.status_emoji AS author_status_emoji,
+              (u.avatar_data IS NOT NULL AND u.avatar_data <> '') AS author_has_avatar
        FROM comments c
        JOIN users u ON u.id = c.user_id
        WHERE c.project_id = $1

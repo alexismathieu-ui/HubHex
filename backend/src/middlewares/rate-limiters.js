@@ -55,6 +55,17 @@ const resetPasswordLimiter = rateLimit({
   },
 });
 
+/** Limite les modifications de profil et suppressions de compte. */
+const profileLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { message: "Trop de modifications de profil. Reessaie plus tard." },
+  },
+});
+
 /** Limite l'abus du tableau de bord (agregations couteuses). */
 const dashboardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -92,6 +103,7 @@ module.exports = {
   authLimiter,
   commentLimiter,
   communityReadLimiter,
+  profileLimiter,
   dashboardLimiter,
   filesImportLimiter,
   filesLimiter,
