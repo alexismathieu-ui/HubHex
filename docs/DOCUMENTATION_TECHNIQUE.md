@@ -5,7 +5,7 @@
 Monorepo avec deux applications :
 
 - **backend/** — API REST Express 5, port 4000
-- **frontend/** — Next.js App Router, port 3000
+- **frontend/** — Next.js App Router, TypeScript (`.ts`/`.tsx`), port 3000
 
 Le schema PostgreSQL est applique au demarrage du backend (`ensureDatabaseSchema` dans `backend/src/config/db.js`). Pas de migrations versionnees separees : le DDL est idempotent (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`).
 
@@ -71,6 +71,15 @@ JWT HS256, secret `JWT_SECRET` (min. 32 caracteres). Payload : `userId`, `userna
 | `FRONTEND_URL` | non | CORS (defaut localhost:3000) |
 | `ALLOW_DEV_RESET_TOKEN` | non | Token reset en JSON (dev uniquement) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | non | Email reset password |
+
+## Frontend TypeScript
+
+- Tous les fichiers sous `frontend/src/` sont en **`.ts`** (utilitaires) ou **`.tsx`** (React).
+- **`strict: true`** dans `frontend/tsconfig.json` (comme le portfolio Vite).
+- Types partages : `frontend/src/types/hubhex.ts`, `depot.ts`, `profile.ts`, `auth.ts`.
+- Helpers : `frontend/src/lib/apiHeaders.ts` (`createAuthHeaders`), `frontend/src/lib/errors.ts` (`getErrorMessage`).
+- Le build Next valide les types (`npm run build` / `npx tsc --noEmit`).
+- Le backend reste en **JavaScript** (CommonJS).
 
 ## Demarrage local
 

@@ -6,7 +6,7 @@ Plateforme web de gestion de projets pour developpeurs : depots heberges sur Hub
 
 | Couche | Technologie |
 |--------|-------------|
-| Frontend | Next.js 16, React 19, Tailwind CSS 4 |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | Backend | Express 5, Node.js |
 | BDD | PostgreSQL |
 | Auth | JWT (localStorage `hubhex_token`) |

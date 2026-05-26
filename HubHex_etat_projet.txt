@@ -1,10 +1,11 @@
 ================================================================================
 HUBHEX — ETAT DU PROJET (fait / reste a faire)
 ================================================================================
-Document mis a jour le 26 mai 2026 — retrait seed-demo, checklist demarrage local.
+Document mis a jour le 26 mai 2026 — frontend TypeScript strict, checklist locale,
+retrait seed-demo, correctif securite dompurify.
 
-Progression globale estimee pour la soutenance CDC : environ 85 a 90 % du cahier des
-charges fonctionnel ; livrables documentaires ~75 % ; differentiation implementee (~80 %).
+Progression globale estimee pour la soutenance CDC : environ 88 a 92 % du cahier des
+charges fonctionnel ; livrables documentaires ~78 % ; differentiation implementee (~82 %).
 
 ================================================================================
 1. VISION ET ARCHITECTURE
@@ -15,25 +16,29 @@ chaque depot est heberge sur HubHex (pas un lien GitHub externe), chemin public 
   username/slug-du-depot
 
 Stack :
-  - Frontend : Next.js 16 (App Router), React 19, Tailwind 4, Monaco Editor
-  - Backend  : Express 5, Node.js — port 4000
+  - Frontend : Next.js 16 (App Router), React 19, TypeScript strict, Tailwind 4, Monaco
+  - Backend  : Express 5, Node.js (JavaScript) — port 4000
   - BDD      : PostgreSQL (schema au boot via ensureDatabaseSchema())
   - Auth     : JWT HS256 (localStorage hubhex_token), invalidation si changement MDP
 
 Monorepo :
   HubHex/
-    backend/          API + scripts (export schema, tests, reset-password)
-    frontend/         Application Next.js
+    backend/          API Express (JS) + scripts (export schema, tests, reset-password)
+    frontend/         Application Next.js (100 % .ts / .tsx, tsconfig strict)
     database/         hubhex_schema.sql (export structure)
-    docs/               Doc utilisateur, technique, soutenance
-    postman/            Collection tests API
-    http/               Fichiers REST Client
-    README.md           Installation et demarrage
+    docs/             Doc utilisateur, technique, soutenance, checklist demarrage
+    postman/          Collection tests API
+    http/             Fichiers REST Client
+    README.md
     HubHex_plan_complet.txt
+    HubHex_etat_projet.txt (ce fichier)
 
-Demarrage local :
-  Terminal 1 : cd backend && npm install && npm run dev
-  Terminal 2 : cd frontend && npm install && npm run dev
+Depot GitHub : https://github.com/alexismathieu-ui/HubHex
+
+Demarrage local (detail) : docs/CHECKLIST_DEMARRAGE_LOCAL.md
+  Terminal 1 : cd backend && npm run dev   → http://localhost:4000
+  Terminal 2 : cd frontend && npm run dev  → http://localhost:3000
+
 ================================================================================
 2. CE QUI A ETE FAIT — PAR ZONE
 ================================================================================
@@ -44,12 +49,13 @@ Demarrage local :
 [x] Structure monorepo frontend + backend
 [x] PostgreSQL + schema au boot
 [x] Variables d'environnement Zod (backend/.env.example)
-[x] Scripts npm : dev, test, db:export
-[x] Checklist demarrage : docs/CHECKLIST_DEMARRAGE_LOCAL.md
-[x] README racine complet
+[x] Scripts npm backend : dev, test, db:export, reset-password
+[x] Scripts npm frontend : dev, build, start, lint
+[x] README racine + checklist docs/CHECKLIST_DEMARRAGE_LOCAL.md
+[x] Depot GitHub public (alexismathieu-ui/HubHex)
 [~] Logs morgan — pas de winston/pino structure
-[x] Depot GitHub public : https://github.com/alexismathieu-ui/HubHex
-[ ] Hebergement cloud (optionnel)
+[ ] Hebergement cloud (optionnel, non prioritaire)
+[~] Commit / push des derniers changements locaux (migration TS front) si pas fait
 
 --------------------------------------------------------------------------------
 2.1 BASE DE DONNEES
@@ -58,7 +64,7 @@ Tables au boot :
 
   users, projects, tasks, comments, password_reset_tokens
   project_files (arborescence text/base64)
-  project_repositories (legacy, peu utilise)
+  project_repositories (legacy, peu utilise cote API)
   project_technical_notes
   project_stack_items (planned | learning | using)
   project_journal_entries
@@ -69,20 +75,19 @@ Tables au boot :
 [x] Tables differentiation (notes, stack, journal, templates, relations)
 [x] Templates systeme seedes au boot (3 modeles)
 [x] Export schema : database/hubhex_schema.sql + npm run db:export
-[x] Retrait script db:seed-demo (compte demo manuel a l'inscription)
-[x] Nettoyage doublons ALTER TABLE profil dans db.js
+[x] Pas de seed-demo automatique (compte cree a l'inscription)
 [ ] Migrations SQL versionnees (fichiers par version)
-[ ] Dump pg_dump avec donnees completes (optionnel livrable)
+[ ] Dump pg_dump avec donnees completes (optionnel livrable jury)
 
 --------------------------------------------------------------------------------
-2.2 BACKEND — API (/api)
+2.2 BACKEND — API (/api) — JavaScript, ~90–95 % CDC
 --------------------------------------------------------------------------------
 [x] Express 5, helmet, CORS (localhost + IP LAN :3000 en dev)
-[x] Rate limits : actifs en production ; DESACTIVES par defaut en dev (ENABLE_RATE_LIMIT=false)
+[x] Rate limits : actifs en production ; OFF en dev (ENABLE_RATE_LIMIT=false)
 [x] GET /api/health, doc endpoints en dev sur GET /
 
 AUTH : register, login, forgot/reset password, GET/PATCH/DELETE /me
-       SMTP nodemailer si SMTP_* configure ; sinon token dev (ALLOW_DEV_RESET_TOKEN)
+       SMTP nodemailer si SMTP_* configure ; sinon ALLOW_DEV_RESET_TOKEN (dev)
 
 UTILISATEURS : GET /:username/public, GET /:username/avatar
 
@@ -105,65 +110,87 @@ DIFFERENTIATION :
 
 SECURITE : bcrypt 12, JWT, validation Zod, rate limits (prod), scripts admin MDP
 
+Reste backend (non bloquant soutenance) :
+[ ] SMTP reel production
+[ ] Tests integration routes API (supertest)
+[ ] Logs structures (winston/pino)
+[ ] Migrations SQL versionnees
+
 --------------------------------------------------------------------------------
-2.3 FRONTEND — PAGES ET FONCTIONNALITES
+2.3 FRONTEND — TypeScript strict, ~90–95 % CDC
 --------------------------------------------------------------------------------
+Migration : tous les fichiers src/ en .ts / .tsx — strict: true, build Next valide.
+
+Types partages :
+  frontend/src/types/hubhex.ts, depot.ts, profile.ts, auth.ts, community.ts
+Helpers :
+  frontend/src/lib/apiHeaders.ts (createAuthHeaders)
+  frontend/src/lib/errors.ts (getErrorMessage)
+
 Routes :
   /, /connexion, /tableau-de-bord, /depots, /depots/[id], /communaute, /profil
-  /graphe (Graphe HubHex)
-  /utilisateurs/[username] (profil public)
+  /graphe, /utilisateurs/[username]
 
-[x] Auth complete + reset MDP (lien ?reset= dans email ou dev token)
-[x] Profil ~95 % (avatar, pseudo, statut, activite, suppression compte)
+[x] Auth complete + reset MDP
+[x] Profil (avatar, pseudo, statut, activite, suppression compte)
 [x] Depots : CRUD, templates a la creation, onglets :
       Fichiers | Kanban | Stack | Journal | Notes | Parametres
-[x] Explorateur fichiers + import ZIP + editeur Monaco (mini VS Code) :
-      onglets, coloration syntaxique, minimap, Ctrl+S, barre d'etat
-[x] Kanban avec glisser-deposer entre colonnes
-[x] Communaute + liens vers profils publics
-[x] Graphe : liens entre depots (meme techno, inspire de, suite de…)
-[x] Correctifs 429 : cache fichier, pas de boucle GET, rate limit off en dev
+[x] Explorateur fichiers + import ZIP + editeur Monaco (onglets, Ctrl+S, minimap)
+[x] Kanban drag & drop
+[x] Communaute + profils publics
+[x] Graphe HubHex (relations entre depots)
+[x] UI Tailwind slate/cyan (pas de shadcn — teste puis retire)
+[x] Correctif Dependabot : dompurify >= 3.4.0 (override via monaco-editor)
+[x] npx tsc --noEmit + npm run build OK
 
 --------------------------------------------------------------------------------
 2.4 TESTS / OUTILS
 --------------------------------------------------------------------------------
-[x] Tests backend node:test (npm test) — auth helpers, slugs, bcrypt, BDD
+[x] Tests backend node:test (npm test) — auth helpers, slugs, connectivite BDD
 [x] Postman + http/hubhex.http
 [x] Scripts reset-password, export-schema
 
-Demo soutenance : compte personnel (inscription sur /connexion), pas de seed automatique.
+Demo soutenance : creer un compte sur /connexion, preparer 1 depot public + parcours
+docs/SCENARIO_DEMO.md (pas de compte demo automatique).
 
 --------------------------------------------------------------------------------
 2.5 DOCUMENTATION LIVRABLES CDC
 --------------------------------------------------------------------------------
 [x] README.md
-[x] docs/DOCUMENTATION_TECHNIQUE.md
+[x] docs/DOCUMENTATION_TECHNIQUE.md (inclut section TypeScript)
 [x] docs/DOCUMENTATION_UTILISATEUR.md
+[x] docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [x] docs/SOUTENANCE.md (slides markdown)
 [x] docs/SCENARIO_DEMO.md
 [x] database/hubhex_schema.sql
+[ ] Captures d'ecran doc utilisateur
+[ ] Support slides export PDF/PowerPoint si demande par le jury
+[ ] CDC PDF final a refaire (stack TypeScript front a y integrer)
 
 ================================================================================
 3. CE QUI RESTE A FAIRE — PRIORISE
 ================================================================================
 
-PRIORITE HAUTE (avant passage devant le jury)
-[ ] Commiter / pousser le code sur GitHub si requis
+PRIORITE HAUTE (avant jury)
+[ ] Commiter et pousser sur GitHub (migration TS frontend + docs si pas encore fait)
+[ ] Verifier demarrage local une fois : docs/CHECKLIST_DEMARRAGE_LOCAL.md
+[ ] Parcours demo complet avec votre compte (docs/SCENARIO_DEMO.md)
 [ ] Export pg_dump complet si le jury exige des donnees dans le .sql
-[ ] Relire slides docs/SOUTENANCE.md et en faire PowerPoint/PDF si demande
+[ ] Relire / exporter docs/SOUTENANCE.md en PDF ou PPT
 
 PRIORITE MOYENNE
 [ ] SMTP reel pour reset password (compte mail ecole)
 [ ] Captures d'ecran pour doc utilisateur
-[x] Tests manuels checklist formalisee (docs/CHECKLIST_DEMARRAGE_LOCAL.md)
+[ ] Refaire le document CDC (cahier des charges) avec stack TypeScript front
 [ ] Moderation avancee (signalements)
 
 PRIORITE BASSE
 [ ] Migrations SQL versionnees
+[ ] Backend en TypeScript (optionnel)
+[ ] Hebergement cloud
 [ ] Object storage S3 pour fichiers
 [ ] JWT httpOnly / refresh token
 [ ] Accessibilite WCAG audit
-[ ] Fiche projet public dediee (hors liste communaute)
 
 ================================================================================
 4. ESTIMATION PAR BLOC (%)
@@ -175,28 +202,36 @@ PRIORITE BASSE
   Kanban (drag & drop)            ~90 %
   Communaute + profils publics    ~85 %
   Dashboard                       ~80 %
-  Differentiation CDC             ~80 %
-  Securite de base                ~85 %
-  Docs / README / SQL / slides    ~75 %
+  Differentiation CDC             ~82 %
+  Securite de base                ~88 %
+  Frontend TypeScript strict      ~95 % (code) / qualite types OK
+  Backend API (JS)                ~92 %
+  Docs / README / SQL / slides    ~78 %
 
 ================================================================================
 5. FICHIERS POINT D'ENTREE
 ================================================================================
 
-  API boot          backend/src/server.js
-  Schema BDD        backend/src/config/db.js
-  Editeur           frontend/src/components/depots/DepotCodeWorkbench.js
-  Explorateur       frontend/src/components/depots/DepotFileExplorer.js
-  Etat projet       HubHex_etat_projet.txt (ce fichier)
+  API boot              backend/src/server.js
+  Schema BDD            backend/src/config/db.js
+  Auth front            frontend/src/context/AuthContext.tsx
+  Types API             frontend/src/types/hubhex.ts
+  Editeur               frontend/src/components/depots/DepotCodeWorkbench.tsx
+  Explorateur           frontend/src/components/depots/DepotFileExplorer.tsx
+  Config TS             frontend/tsconfig.json
+  Checklist locale      docs/CHECKLIST_DEMARRAGE_LOCAL.md
+  Etat projet           HubHex_etat_projet.txt
 
 ================================================================================
 6. PROCHAINES ACTIONS SUGGEREES
 ================================================================================
 
-  1. Suivre docs/CHECKLIST_DEMARRAGE_LOCAL.md (backend :4000 + front :3000)
-  2. Parcours demo une fois (docs/SCENARIO_DEMO.md) avec votre compte
-  3. Export pg_dump ou npm run db:export si livrable SQL demande
-  4. Preparer support slides (export PDF depuis docs/SOUTENANCE.md)
+  1. cd backend && npm run dev  +  cd frontend && npm run dev
+  2. Cocher docs/CHECKLIST_DEMARRAGE_LOCAL.md
+  3. git add / commit / push (migration TypeScript frontend)
+  4. Parcours demo docs/SCENARIO_DEMO.md
+  5. pg_dump ou npm run db:export selon consignes jury
+  6. Exporter slides docs/SOUTENANCE.md
 
 ================================================================================
 FIN DU DOCUMENT
