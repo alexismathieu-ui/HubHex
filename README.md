@@ -79,6 +79,7 @@ HubHex/
 | `backend/npm run dev` | API en developpement |
 | `backend/npm test` | Tests automatises (node:test) |
 | `backend/npm run db:export` | Export schema vers `database/hubhex_schema.sql` |
+| `backend/npm run db:dump` | Export complet (structure + donnees) vers `database/hubhex_full_dump.sql` |
 | `backend/npm run reset-password -- email NouveauMdp1!` | Reset MDP admin |
 
 ## Documentation
@@ -92,7 +93,7 @@ HubHex/
 ## Livrables CDC
 
 - Code source frontend + backend (ce depot)
-- Export BDD : `database/hubhex_schema.sql` (+ `npm run db:export` sur BDD live)
+- Export BDD : `database/hubhex_schema.sql` (structure) et `npm run db:dump` pour un dump complet avec donnees (`database/hubhex_full_dump.sql`, non versionne)
 - Documentation utilisateur et technique (`docs/`)
 - Support de presentation (`docs/SOUTENANCE.md`)
 

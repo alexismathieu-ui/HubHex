@@ -85,6 +85,23 @@ JWT HS256, secret `JWT_SECRET` (min. 32 caracteres). Payload : `userId`, `userna
 
 Voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.md) (PostgreSQL, `.env`, ports 4000 / 3000).
 
+## Export base de donnees
+
+| Commande | Fichier produit | Contenu |
+|----------|-----------------|---------|
+| `cd backend && npm run db:export` | `database/hubhex_schema.sql` | Structure (metadonnees colonnes, sans donnees) |
+| `cd backend && npm run db:dump` | `database/hubhex_full_dump.sql` | **Complet** : DDL live + toutes les lignes + sequences |
+
+`db:dump` tente d'abord `pg_dump` (outil client PostgreSQL). Sinon, un export SQL est genere via Node (12 tables, ordre FK respecte). Le fichier complet est ignore par Git (`database/.gitignore`) car il contient des donnees sensibles.
+
+Restauration du dump complet :
+
+```bash
+psql "$DATABASE_URL" -f database/hubhex_full_dump.sql
+```
+
+Variable optionnelle `PG_DUMP_PATH` dans `backend/.env` si `pg_dump` n'est pas dans le PATH.
+
 ## Tests
 
 ```bash

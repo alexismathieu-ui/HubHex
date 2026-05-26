@@ -49,7 +49,7 @@ Demarrage local (detail) : docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [x] Structure monorepo frontend + backend
 [x] PostgreSQL + schema au boot
 [x] Variables d'environnement Zod (backend/.env.example)
-[x] Scripts npm backend : dev, test, db:export, reset-password
+[x] Scripts npm backend : dev, test, db:export, db:dump, reset-password
 [x] Scripts npm frontend : dev, build, start, lint
 [x] README racine + checklist docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [x] Depot GitHub public (alexismathieu-ui/HubHex)
@@ -77,7 +77,7 @@ Tables au boot :
 [x] Export schema : database/hubhex_schema.sql + npm run db:export
 [x] Pas de seed-demo automatique (compte cree a l'inscription)
 [ ] Migrations SQL versionnees (fichiers par version)
-[ ] Dump pg_dump avec donnees completes (optionnel livrable jury)
+[x] Dump complet BDD : npm run db:dump (pg_dump si dispo, sinon export Node)
 
 --------------------------------------------------------------------------------
 2.2 BACKEND — API (/api) — JavaScript, ~90–95 % CDC
@@ -175,7 +175,7 @@ PRIORITE HAUTE (avant jury)
 [ ] Commiter et pousser sur GitHub (migration TS frontend + docs si pas encore fait)
 [ ] Verifier demarrage local une fois : docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [ ] Parcours demo complet avec votre compte (docs/SCENARIO_DEMO.md)
-[ ] Export pg_dump complet si le jury exige des donnees dans le .sql
+[x] Export complet : npm run db:dump → database/hubhex_full_dump.sql
 [ ] Relire / exporter docs/SOUTENANCE.md en PDF ou PPT
 
 PRIORITE MOYENNE
@@ -230,7 +230,7 @@ PRIORITE BASSE
   2. Cocher docs/CHECKLIST_DEMARRAGE_LOCAL.md
   3. git add / commit / push (migration TypeScript frontend)
   4. Parcours demo docs/SCENARIO_DEMO.md
-  5. pg_dump ou npm run db:export selon consignes jury
+  5. npm run db:dump (complet) ou db:export (schema seul) selon consignes jury
   6. Exporter slides docs/SOUTENANCE.md
 
 ================================================================================

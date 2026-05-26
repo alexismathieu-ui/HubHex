@@ -61,6 +61,7 @@ npm run dev
 cd backend
 npm test                    # tests automatises
 npm run db:export           # export schema → database/hubhex_schema.sql
+npm run db:dump             # export complet (structure + donnees) → database/hubhex_full_dump.sql
 npm run reset-password -- email NouveauMdp1!
 ```
 
