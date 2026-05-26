@@ -4,7 +4,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { API_BASE_URL } from "../lib/apiBaseUrl";
 import { TOKEN_KEY } from "../lib/auth/constants";
+import { fetchWithTimeout } from "../lib/fetchWithTimeout";
 import { formatApiError } from "../lib/formatApiError";
+import { readApiJson } from "../lib/readApiJson";
 
 const AuthContext = createContext(null);
 
@@ -18,11 +20,16 @@ export function AuthProvider({ children }) {
       setCurrentUser(null);
       return null;
     }
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
-    const data = await response.json();
-    if (!response.ok) {
+    const { data, ok } = await readApiJson(response, `${API_BASE_URL}/auth/me`);
+    if (response.status === 429) {
+      throw new Error(
+        "Trop de requetes vers l'API. Redemarrez le backend (npm run dev) puis rafraichissez la page.",
+      );
+    }
+    if (!ok) {
       throw new Error(formatApiError(data) || "Session invalide.");
     }
     setCurrentUser(data.user);
@@ -51,18 +58,30 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
+    let cancelled = false;
     fetchMe(saved)
       .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken("");
-        setCurrentUser(null);
+        if (!cancelled) {
+          localStorage.removeItem(TOKEN_KEY);
+          setToken("");
+          setCurrentUser(null);
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    const safety = setTimeout(() => setLoading(false), 15_000);
+    return () => {
+      cancelled = true;
+      clearTimeout(safety);
+    };
   }, [fetchMe]);
 
   const login = useCallback(
     async (email, password) => {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { formatApiError } from "../../lib/formatApiError";
 
-export function ForgotPasswordPanel() {
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState("request");
+export function ForgotPasswordPanel({ initialResetToken = "" }) {
+  const [open, setOpen] = useState(Boolean(initialResetToken));
+  const [step, setStep] = useState(initialResetToken ? "reset" : "request");
   const [email, setEmail] = useState("");
-  const [resetToken, setResetToken] = useState("");
+  const [resetToken, setResetToken] = useState(initialResetToken);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [devTokenHint, setDevTokenHint] = useState("");
+
+  useEffect(() => {
+    if (initialResetToken) {
+      setOpen(true);
+      setStep("reset");
+      setResetToken(initialResetToken);
+    }
+  }, [initialResetToken]);
 
   const onRequestSubmit = async (event) => {
     event.preventDefault();

@@ -1,7 +1,7 @@
 const dotenv = require("dotenv");
 const { z } = require("zod");
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -18,6 +18,20 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
   /** Uniquement en dev local : expose le token de reset dans la reponse JSON. */
   ALLOW_DEV_RESET_TOKEN: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  SMTP_HOST: z.string().trim().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  SMTP_USER: z.string().trim().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().trim().optional(),
+  /** true pour activer les rate limits en local (defaut: desactive en development). */
+  ENABLE_RATE_LIMIT: z
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),

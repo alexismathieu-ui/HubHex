@@ -8,12 +8,18 @@ import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { depotPath, slugify, technologiesFromProject } from "../../lib/depots/depotUtils";
 import { formatApiError } from "../../lib/formatApiError";
 import { DepotFileExplorer } from "./DepotFileExplorer";
+import { ProjectJournalPanel } from "./ProjectJournalPanel";
+import { ProjectNotesPanel } from "./ProjectNotesPanel";
+import { ProjectStackPanel } from "./ProjectStackPanel";
 import { TasksBoard } from "./TasksBoard";
 import { TechTagPicker } from "./TechTagPicker";
 
 const TABS = [
   { id: "fichiers", label: "Fichiers" },
   { id: "kanban", label: "Kanban" },
+  { id: "stack", label: "Stack" },
+  { id: "journal", label: "Journal" },
+  { id: "notes", label: "Notes" },
   { id: "parametres", label: "Parametres" },
 ];
 
@@ -218,8 +224,8 @@ export function DepotDetail({ depotId }) {
 
       <div className="mt-6">
         {activeTab === "fichiers" ? (
-          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-            <p className="font-mono text-xs text-slate-600">hubhex://{path}</p>
+          <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/50 p-2 sm:p-4">
+            <p className="mb-2 px-2 font-mono text-xs text-slate-600">hubhex://{path}</p>
             <DepotFileExplorer token={token} projectId={project.id} />
           </section>
         ) : null}
@@ -227,6 +233,24 @@ export function DepotDetail({ depotId }) {
         {activeTab === "kanban" ? (
           <section>
             <TasksBoard token={token} projectId={project.id} />
+          </section>
+        ) : null}
+
+        {activeTab === "stack" ? (
+          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+            <ProjectStackPanel token={token} projectId={project.id} />
+          </section>
+        ) : null}
+
+        {activeTab === "journal" ? (
+          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+            <ProjectJournalPanel token={token} projectId={project.id} />
+          </section>
+        ) : null}
+
+        {activeTab === "notes" ? (
+          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+            <ProjectNotesPanel token={token} projectId={project.id} />
           </section>
         ) : null}
 

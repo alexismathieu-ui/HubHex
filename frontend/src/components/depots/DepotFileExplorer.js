@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ArchiveImportDialog } from "./ArchiveImportDialog";
+import { DepotCodeWorkbench } from "./DepotCodeWorkbench";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import {
   buildImportPayload,
@@ -38,6 +39,7 @@ function TreeNode({
   onDragLeave,
   onDrop,
   onExternalDragOver,
+  onOpenFile,
 }) {
   const isFolder = node.kind === "folder";
   const isExpanded = expandedIds.has(node.id);
@@ -89,6 +91,11 @@ function TreeNode({
         className={`${rowClass}${viewMode === "list" ? " flex items-center gap-2" : ""}`}
         role="treeitem"
         aria-selected={isSelected}
+        onDoubleClick={() => {
+          if (node.kind === "file") {
+            onOpenFile?.(node);
+          }
+        }}
       >
         {isFolder ? (
           <button
@@ -156,6 +163,7 @@ function TreeNode({
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               onExternalDragOver={onExternalDragOver}
+              onOpenFile={onOpenFile}
             />
           ))}
         </div>
@@ -179,6 +187,39 @@ export function DepotFileExplorer({ token, projectId }) {
   const [importing, setImporting] = useState(false);
   const [externalDragOver, setExternalDragOver] = useState(false);
   const [archivePrompt, setArchivePrompt] = useState(null);
+  const [openTabs, setOpenTabs] = useState([]);
+  const [activeTabId, setActiveTabId] = useState(null);
+
+  const openFileInEditor = useCallback((node) => {
+    if (!node || node.kind !== "file") {
+      return;
+    }
+    setOpenTabs((prev) => {
+      if (prev.some((tab) => tab.id === node.id)) {
+        return prev;
+      }
+      return [...prev, { id: node.id, name: node.name, dirty: false }];
+    });
+    setActiveTabId(node.id);
+  }, []);
+
+  const closeTab = useCallback((tabId) => {
+    setOpenTabs((prev) => {
+      const next = prev.filter((tab) => tab.id !== tabId);
+      setActiveTabId((current) => (current === tabId ? next[0]?.id ?? null : current));
+      return next;
+    });
+  }, []);
+
+  const markTabDirty = useCallback((tabId, dirty) => {
+    setOpenTabs((prev) => {
+      const tab = prev.find((t) => t.id === tabId);
+      if (!tab || tab.dirty === dirty) {
+        return prev;
+      }
+      return prev.map((t) => (t.id === tabId ? { ...t, dirty } : t));
+    });
+  }, []);
   const containerRef = useRef(null);
   const uploadRef = useRef(null);
   const folderUploadRef = useRef(null);
@@ -292,6 +333,14 @@ export function DepotFileExplorer({ token, projectId }) {
     } catch (error) {
       setMessage(error.message);
     }
+  };
+
+  const openSelectedEditor = () => {
+    if (selectedArray.length !== 1) {
+      return;
+    }
+    const node = findNodeById(tree, selectedArray[0]);
+    openFileInEditor(node);
   };
 
   const renameSelected = async () => {
@@ -556,11 +605,11 @@ export function DepotFileExplorer({ token, projectId }) {
       ref={containerRef}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="mt-2 outline-none"
-      role="tree"
-      aria-label="Fichiers du depot"
+      className="mt-2 flex h-[min(72vh,680px)] min-h-[420px] flex-col outline-none lg:flex-row"
+      aria-label="Explorateur et editeur de code"
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <aside className="flex w-full shrink-0 flex-col border-b border-slate-700 lg:w-[280px] lg:border-b-0 lg:border-r">
+      <div className="flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Arborescence
@@ -669,6 +718,14 @@ export function DepotFileExplorer({ token, projectId }) {
         <button
           type="button"
           className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
+          onClick={openSelectedEditor}
+          disabled={selectedArray.length !== 1}
+        >
+          Editer
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
           onClick={renameSelected}
           disabled={selectedArray.length !== 1}
         >
@@ -709,11 +766,12 @@ export function DepotFileExplorer({ token, projectId }) {
       {message ? <p className="mt-2 text-sm text-slate-300">{message}</p> : null}
 
       <div
-        className={`mt-3 min-h-[200px] rounded-lg border p-3 transition ${
+        className={`mx-3 mb-3 min-h-[120px] flex-1 rounded-lg border p-2 transition ${
           externalDragOver
             ? "border-cyan-500 bg-cyan-950/30"
             : "border-slate-700 bg-slate-950/60"
-        } ${viewMode === "schema" ? "overflow-x-auto" : "max-h-[360px] overflow-y-auto"}`}
+        } ${viewMode === "schema" ? "overflow-x-auto" : "overflow-y-auto"}`}
+        role="tree"
         onDragOver={onExternalDragOver}
         onDragLeave={() => setExternalDragOver(false)}
         onDrop={(event) => handleDropZone(event, targetParentId)}
@@ -753,10 +811,25 @@ export function DepotFileExplorer({ token, projectId }) {
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               onExternalDragOver={onExternalDragOver}
+              onOpenFile={openFileInEditor}
             />
           ))
         )}
       </div>
+      </aside>
+
+      <main className="flex min-h-[280px] min-w-0 flex-1 flex-col lg:min-h-0">
+        <DepotCodeWorkbench
+          token={token}
+          projectId={projectId}
+          tabs={openTabs}
+          activeTabId={activeTabId}
+          onActivateTab={setActiveTabId}
+          onCloseTab={closeTab}
+          onMarkDirty={markTabDirty}
+          onSaved={loadTree}
+        />
+      </main>
     </div>
   );
 }

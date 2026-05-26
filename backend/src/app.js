@@ -14,6 +14,8 @@ const { usersRouter } = require("./routes/users.routes");
 const { errorHandler } = require("./middlewares/error-handler");
 const { requireJsonBody } = require("./middlewares/require-json");
 const { healthRouter } = require("./routes/health.routes");
+const { templatesRouter } = require("./routes/templates.routes");
+const { graphRouter } = require("./routes/graph.routes");
 
 const app = express();
 
@@ -44,12 +46,19 @@ app.use((req, res, next) => {
 });
 app.use("/api", requireJsonBody);
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 200,
-  }),
-);
+if (env.NODE_ENV !== "development" || env.ENABLE_RATE_LIMIT) {
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: env.NODE_ENV === "development" ? 10_000 : 800,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: {
+        error: { message: "Trop de requetes. Reessaie dans quelques minutes." },
+      },
+    }),
+  );
+}
 
 app.get("/", (_req, res) => {
   if (env.NODE_ENV === "production") {
@@ -76,6 +85,10 @@ app.get("/", (_req, res) => {
       "/api/projects/:projectId/tasks",
       "/api/community/projects?q=&technology=&sort=recent|popular",
       "/api/community/projects/:projectId/comments",
+      "/api/templates",
+      "/api/templates/apply",
+      "/api/graph",
+      "/api/projects/:projectId/notes|stack|journal",
     ],
   });
 });
@@ -83,6 +96,8 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/templates", templatesRouter);
+app.use("/api/graph", graphRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/community", communityRouter);
 

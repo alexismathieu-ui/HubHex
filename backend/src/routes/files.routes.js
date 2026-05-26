@@ -71,8 +71,6 @@ const pasteSchema = z.object({
   mode: z.enum(["copy", "cut"]),
 });
 
-filesRouter.use(filesLimiter);
-
 filesRouter.get("/", async (req, res, next) => {
   try {
     const projectId = parsePositiveInt(req.params.projectId);
@@ -85,6 +83,56 @@ filesRouter.get("/", async (req, res, next) => {
     return next(error);
   }
 });
+
+filesRouter.get("/:fileId/download", async (req, res, next) => {
+  try {
+    const projectId = parsePositiveInt(req.params.projectId);
+    const fileId = parsePositiveInt(req.params.fileId);
+    const result = await pool.query(
+      `SELECT name, content, encoding, mime_type FROM project_files
+       WHERE project_id = $1 AND id = $2 AND kind = 'file'`,
+      [projectId, fileId],
+    );
+    const file = result.rows[0];
+    if (!file || file.encoding !== "base64") {
+      return res.status(404).json({ error: { message: "Fichier binaire introuvable." } });
+    }
+    const buffer = Buffer.from(file.content, "base64");
+    res.setHeader("Content-Type", file.mime_type || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file.name)}"`);
+    return res.send(buffer);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+filesRouter.get("/:fileId", async (req, res, next) => {
+  try {
+    const projectId = parsePositiveInt(req.params.projectId);
+    const fileId = parsePositiveInt(req.params.fileId);
+    if (!fileId) {
+      return res.status(400).json({ error: { message: "Invalid file id." } });
+    }
+    const node = await fetchNode(projectId, fileId);
+    if (!node || node.kind !== "file") {
+      return res.status(404).json({ error: { message: "File not found." } });
+    }
+    const result = await pool.query(
+      `SELECT id, project_id, parent_id, name, kind, content, encoding, mime_type, sort_order, created_at, updated_at
+       FROM project_files WHERE project_id = $1 AND id = $2`,
+      [projectId, fileId],
+    );
+    const item = result.rows[0];
+    if (item.encoding === "base64") {
+      item.download_url = `/api/projects/${projectId}/files/${fileId}/download`;
+    }
+    return res.status(200).json({ item });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+filesRouter.use(filesLimiter);
 
 filesRouter.post("/", async (req, res, next) => {
   try {

@@ -1,4 +1,13 @@
 const rateLimit = require("express-rate-limit");
+const { env } = require("../config/env");
+
+/** En developpement, rate limits desactives par defaut (evite 429 pendant l'edition de fichiers). */
+const wrapLimiter = (limiter) => {
+  if (env.NODE_ENV === "development" && !env.ENABLE_RATE_LIMIT) {
+    return (_req, _res, next) => next();
+  }
+  return limiter;
+};
 
 /** Limite les tentatives d'inscription / connexion (brute force). */
 const authLimiter = rateLimit({
@@ -100,13 +109,13 @@ const filesImportLimiter = rateLimit({
 });
 
 module.exports = {
-  authLimiter,
-  commentLimiter,
-  communityReadLimiter,
-  profileLimiter,
-  dashboardLimiter,
-  filesImportLimiter,
-  filesLimiter,
-  forgotPasswordLimiter,
-  resetPasswordLimiter,
+  authLimiter: wrapLimiter(authLimiter),
+  commentLimiter: wrapLimiter(commentLimiter),
+  communityReadLimiter: wrapLimiter(communityReadLimiter),
+  profileLimiter: wrapLimiter(profileLimiter),
+  dashboardLimiter: wrapLimiter(dashboardLimiter),
+  filesImportLimiter: wrapLimiter(filesImportLimiter),
+  filesLimiter: wrapLimiter(filesLimiter),
+  forgotPasswordLimiter: wrapLimiter(forgotPasswordLimiter),
+  resetPasswordLimiter: wrapLimiter(resetPasswordLimiter),
 };

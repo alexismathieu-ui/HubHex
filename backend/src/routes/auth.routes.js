@@ -10,6 +10,7 @@ const {
   hashResetToken,
   resetTokenExpiresAt,
 } = require("../lib/password-reset");
+const { sendPasswordResetEmail, isSmtpConfigured } = require("../lib/email");
 const { avatarMimeSchema, validateAvatarPayload } = require("../lib/avatar-security");
 const { passwordSchema, usernameSchema, passwordMeetsPolicy } = require("../lib/security");
 const { fetchUserProfile } = require("../lib/user-profile");
@@ -228,12 +229,20 @@ authRouter.post("/forgot-password", forgotPasswordLimiter, async (req, res, next
         [user.id, tokenHash, expiresAt],
       );
 
-      if (env.NODE_ENV === "development" && env.ALLOW_DEV_RESET_TOKEN) {
+      const resetUrl = `${env.FRONTEND_URL}/connexion?reset=${encodeURIComponent(rawToken)}`;
+      if (isSmtpConfigured()) {
+        try {
+          await sendPasswordResetEmail({ to: user.email, resetUrl });
+        } catch (mailError) {
+          console.error("[hubhex] Echec envoi email reset:", mailError.message);
+        }
+      } else if (env.NODE_ENV === "development" && env.ALLOW_DEV_RESET_TOKEN) {
         response.dev_reset = {
           token: rawToken,
           expires_at: expiresAt.toISOString(),
+          reset_url: resetUrl,
           hint:
-            "Mode developpement (ALLOW_DEV_RESET_TOKEN) : en production le code serait envoye par email uniquement.",
+            "SMTP non configure : token expose en dev (ALLOW_DEV_RESET_TOKEN). En production, configurez SMTP_* dans .env.",
         };
       }
     }

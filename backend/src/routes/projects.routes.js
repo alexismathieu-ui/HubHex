@@ -8,6 +8,9 @@ const { authenticate } = require("../middlewares/authenticate");
 const { requireProjectOwner } = require("../middlewares/require-project-owner");
 const { filesRouter } = require("./files.routes");
 const { tasksRouter } = require("./tasks.routes");
+const { notesRouter } = require("./project-notes.routes");
+const { stackRouter } = require("./project-stack.routes");
+const { journalRouter } = require("./project-journal.routes");
 
 const projectsRouter = express.Router();
 
@@ -63,6 +66,9 @@ projectsRouter.use(authenticate);
 
 projectsRouter.use("/:projectId/files", requireProjectOwner, filesRouter);
 projectsRouter.use("/:projectId/tasks", requireProjectOwner, tasksRouter);
+projectsRouter.use("/:projectId/notes", requireProjectOwner, notesRouter);
+projectsRouter.use("/:projectId/stack", requireProjectOwner, stackRouter);
+projectsRouter.use("/:projectId/journal", requireProjectOwner, journalRouter);
 
 projectsRouter.post("/", async (req, res, next) => {
   try {

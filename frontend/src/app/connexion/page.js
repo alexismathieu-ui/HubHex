@@ -58,10 +58,23 @@ function ConnexionContent() {
     }
   };
 
-  if (loading || isAuthenticated) {
+  if (isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center text-slate-400">
-        Chargement...
+        Redirection...
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-slate-400">
+        <p>Verification de la session...</p>
+        <p className="max-w-md text-center text-xs text-slate-500">
+          Si cet ecran reste bloque, verifiez que le backend tourne (npm run dev dans backend/)
+          puis rafraichissez. Vous pouvez aussi ouvrir les outils developpeur → Application →
+          Local Storage → supprimer <code className="text-cyan-400">hubhex_token</code>.
+        </p>
       </div>
     );
   }
@@ -151,7 +164,7 @@ function ConnexionContent() {
                 Se connecter
               </button>
             </form>
-            <ForgotPasswordPanel />
+            <ForgotPasswordPanel initialResetToken={searchParams.get("reset") || ""} />
             <p className="mt-3 text-sm text-slate-300">{loginMessage}</p>
           </article>
         </div>

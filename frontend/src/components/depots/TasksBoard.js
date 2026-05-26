@@ -141,15 +141,37 @@ export function TasksBoard({ token, projectId }) {
     }
   };
 
+  const onColumnDragOver = (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
+  const onColumnDrop = (event, status) => {
+    event.preventDefault();
+    const taskId = Number(event.dataTransfer.getData("text/plain"));
+    if (taskId) {
+      moveTask(taskId, status);
+    }
+  };
+
   const renderColumn = (status) => (
-    <div className="flex min-h-[140px] flex-1 flex-col gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+    <div
+      className="flex min-h-[140px] flex-1 flex-col gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-3"
+      onDragOver={onColumnDragOver}
+      onDrop={(event) => onColumnDrop(event, status)}
+    >
       <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
         {STATUS_LABELS[status]}
       </p>
       {grouped[status].map((task) => (
         <div
           key={task.id}
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-2 text-sm"
+          draggable
+          onDragStart={(event) => {
+            event.dataTransfer.setData("text/plain", String(task.id));
+            event.dataTransfer.effectAllowed = "move";
+          }}
+          className="cursor-grab rounded-md border border-slate-700 bg-slate-900 px-2 py-2 text-sm active:cursor-grabbing"
         >
           <p className="font-medium text-slate-100">{task.title}</p>
           {task.description ? (

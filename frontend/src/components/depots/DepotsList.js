@@ -25,6 +25,8 @@ export function DepotsList() {
   const [message, setMessage] = useState("");
   const [createForm, setCreateForm] = useState(emptyCreateForm);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
   const username = currentUser?.username ?? "";
 
@@ -63,6 +65,44 @@ export function DepotsList() {
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    fetch(`${API_BASE_URL}/templates`, { headers: authHeaders(false) })
+      .then((r) => r.json())
+      .then((data) => setTemplates(data.templates || []))
+      .catch(() => setTemplates([]));
+  }, [token]);
+
+  const onCreateFromTemplate = async () => {
+    if (!selectedTemplateId) {
+      return;
+    }
+    setMessage("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates/apply`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          templateId: Number(selectedTemplateId),
+          title: createForm.title.trim() || undefined,
+          description: createForm.description.trim() || undefined,
+          visibility: createForm.visibility,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(formatApiError(data) || "Erreur template.");
+      }
+      setMessage(`Depot cree depuis template : ${depotPath(username, data.project?.slug)}`);
+      setSelectedTemplateId("");
+      await loadProjects();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
 
   const onTitleChange = (title) => {
     const next = { ...createForm, title };
@@ -200,6 +240,34 @@ export function DepotsList() {
           >
             Creer le depot
           </button>
+          {templates.length > 0 ? (
+            <div className="mt-4 border-t border-slate-700 pt-4">
+              <p className="text-xs font-semibold uppercase text-violet-300">Ou depuis un template</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <select
+                  className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                >
+                  <option value="">Choisir un template...</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                      {t.is_system ? " (systeme)" : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="rounded-lg border border-violet-600 px-4 py-2 text-sm text-violet-200 hover:bg-violet-950"
+                  onClick={onCreateFromTemplate}
+                  disabled={!selectedTemplateId}
+                >
+                  Appliquer
+                </button>
+              </div>
+            </div>
+          ) : null}
         </form>
       ) : null}
 

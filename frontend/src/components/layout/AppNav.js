@@ -10,6 +10,7 @@ import { UserAvatar } from "../profile/UserAvatar";
 const NAV_ITEMS = [
   { href: "/tableau-de-bord", label: "Tableau de bord" },
   { href: "/depots", label: "Mes depots" },
+  { href: "/graphe", label: "Graphe" },
   { href: "/communaute", label: "Communaute" },
   { href: "/profil", label: "Mon profil" },
 ];

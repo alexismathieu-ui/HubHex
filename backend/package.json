@@ -7,7 +7,10 @@
     "dev:watch": "node --watch src/server.js",
     "start": "node src/server.js",
     "reset-password": "node scripts/reset-user-password.js",
-    "normalize-emails": "node scripts/normalize-user-emails.js"
+    "normalize-emails": "node scripts/normalize-user-emails.js",
+    "test": "node --test test/*.test.js",
+    "db:export": "node scripts/export-schema.js",
+    "db:seed-demo": "node scripts/seed-demo.js"
   },
   "license": "ISC",
   "type": "commonjs",
@@ -20,6 +23,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
+    "nodemailer": "^7.0.3",
     "pg": "^8.20.0",
     "zod": "^4.4.3"
   }

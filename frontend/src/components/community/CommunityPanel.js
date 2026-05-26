@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -308,10 +309,16 @@ export function CommunityPanel() {
                     />
                     <div>
                       <p className="text-xs text-sky-300">
-                        Par {getDisplayName({
-                          username: project.author_username,
-                          display_name: project.author_display_name,
-                        })}
+                        Par{" "}
+                        <Link
+                          href={`/utilisateurs/${encodeURIComponent(project.author_username)}`}
+                          className="hover:underline"
+                        >
+                          {getDisplayName({
+                            username: project.author_username,
+                            display_name: project.author_display_name,
+                          })}
+                        </Link>
                         {project.is_mine ? " (ton depot)" : ""}
                       </p>
                       {getStatusLabel({
@@ -370,12 +377,15 @@ export function CommunityPanel() {
                               }}
                               size="sm"
                             />
-                            <p className="text-xs font-medium text-sky-300">
+                            <Link
+                              href={`/utilisateurs/${encodeURIComponent(comment.author_username)}`}
+                              className="text-xs font-medium text-sky-300 hover:underline"
+                            >
                               {getDisplayName({
                                 username: comment.author_username,
                                 display_name: comment.author_display_name,
                               })}
-                            </p>
+                            </Link>
                           </div>
                           <p className="mt-1 text-sm text-slate-200">{comment.content}</p>
                           {canDeleteComment(project, comment) ? (
