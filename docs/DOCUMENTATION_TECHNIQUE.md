@@ -72,6 +72,10 @@ JWT HS256, secret `JWT_SECRET` (min. 32 caracteres). Payload : `userId`, `userna
 | `ALLOW_DEV_RESET_TOKEN` | non | Token reset en JSON (dev uniquement) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | non | Email reset password |
 
+## Demarrage local
+
+Voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.md) (PostgreSQL, `.env`, ports 4000 / 3000).
+
 ## Tests
 
 ```bash

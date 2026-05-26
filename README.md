@@ -48,14 +48,9 @@ Application : http://localhost:3000
 
 Variable optionnelle : `NEXT_PUBLIC_API_URL=http://localhost:4000/api`
 
-### 4. Donnees demo (soutenance)
+**Checklist detaillee** : [docs/CHECKLIST_DEMARRAGE_LOCAL.md](docs/CHECKLIST_DEMARRAGE_LOCAL.md)
 
-```bash
-cd backend
-npm run db:seed-demo
-```
-
-Compte : `demo@hubhex.dev` / `DemoHubHex1!` — depot public `demo/portfolio-demo`
+Premier usage : inscrivez-vous sur http://localhost:3000/connexion (pas de compte demo automatique).
 
 ## Structure du monorepo
 
@@ -84,11 +79,11 @@ HubHex/
 | `backend/npm run dev` | API en developpement |
 | `backend/npm test` | Tests automatises (node:test) |
 | `backend/npm run db:export` | Export schema vers `database/hubhex_schema.sql` |
-| `backend/npm run db:seed-demo` | Jeu de donnees demo |
 | `backend/npm run reset-password -- email NouveauMdp1!` | Reset MDP admin |
 
 ## Documentation
 
+- [Checklist demarrage local](docs/CHECKLIST_DEMARRAGE_LOCAL.md)
 - [Documentation utilisateur](docs/DOCUMENTATION_UTILISATEUR.md)
 - [Documentation technique](docs/DOCUMENTATION_TECHNIQUE.md)
 - [Scenario de demo soutenance](docs/SCENARIO_DEMO.md)

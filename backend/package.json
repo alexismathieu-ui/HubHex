@@ -9,8 +9,7 @@
     "reset-password": "node scripts/reset-user-password.js",
     "normalize-emails": "node scripts/normalize-user-emails.js",
     "test": "node --test test/*.test.js",
-    "db:export": "node scripts/export-schema.js",
-    "db:seed-demo": "node scripts/seed-demo.js"
+    "db:export": "node scripts/export-schema.js"
   },
   "license": "ISC",
   "type": "commonjs",

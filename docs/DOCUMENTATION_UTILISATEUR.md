@@ -34,9 +34,8 @@ Menu **Graphe** : reliez vos depots (meme techno, inspire de, suite de…) pour 
 - Modifier email / mot de passe / supprimer le compte
 - Profils publics : `/utilisateurs/nom-utilisateur`
 
-## Compte demo
+## Premier compte
 
-Apres `npm run db:seed-demo` dans `backend/` :
+Aucun compte n'est cree automatiquement. Sur **Connexion**, utilisez **S'inscrire** avec un mot de passe fort (majuscule, minuscule, chiffre, symbole).
 
-- Email : `demo@hubhex.dev`
-- Mot de passe : `DemoHubHex1!`
+Demarrage local : voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.md).
