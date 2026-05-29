@@ -12,6 +12,7 @@ const TABLES = [
   "tasks",
   "comments",
   "password_reset_tokens",
+  "refresh_tokens",
   "project_repositories",
   "project_files",
   "project_technical_notes",

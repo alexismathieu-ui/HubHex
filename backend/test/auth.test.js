@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const { pool } = require("../src/config/db");
 const { passwordSchema } = require("../src/lib/security");
 const { hashResetToken, generateResetToken } = require("../src/lib/password-reset");
+const { hashRefreshToken } = require("../src/lib/refresh-token");
+const { getAccessTokenExpiresInSeconds } = require("../src/lib/auth-token");
 
 describe("auth helpers", () => {
   it("passwordSchema accepte un mot de passe fort", () => {
@@ -25,6 +27,15 @@ describe("auth helpers", () => {
   it("generateResetToken produit 64 caracteres hex", () => {
     const token = generateResetToken();
     assert.match(token, /^[a-f0-9]{64}$/);
+  });
+
+  it("hashRefreshToken est deterministe", () => {
+    assert.equal(hashRefreshToken("abc"), hashRefreshToken("abc"));
+  });
+
+  it("access token TTL par defaut ~ 15 minutes", () => {
+    const seconds = getAccessTokenExpiresInSeconds();
+    assert.ok(seconds >= 14 * 60 && seconds <= 16 * 60);
   });
 });
 

@@ -84,6 +84,9 @@ HubHex/
 
 ## Documentation
 
+- [Tests de securite API](docs/TESTS_SECURITE.md) — JWT + refresh token, checklist audit
+- [Partager l’API via un lien (prof)](docs/GUIDE_LIEN_API.md) — tunnel + URL publique
+- [Guide test API (correcteur / prof)](docs/GUIDE_TEST_API.md) — Postman, REST Client, curl
 - [Checklist demarrage local](docs/CHECKLIST_DEMARRAGE_LOCAL.md)
 - [Documentation utilisateur](docs/DOCUMENTATION_UTILISATEUR.md)
 - [Documentation technique](docs/DOCUMENTATION_TECHNIQUE.md)

@@ -70,3 +70,4 @@ npm run reset-password -- email NouveauMdp1!
 - [ ] Parcours teste une fois : inscription → depot → Kanban → public → commentaire
 - [ ] Voir `docs/SCENARIO_DEMO.md`
 - [ ] Slides : `docs/SOUTENANCE.md`
+- [ ] Prof / jury : lien public → `docs/GUIDE_LIEN_API.md` (`npm run share` + URL `/api/health`)

@@ -6,6 +6,10 @@ dotenv.config({ quiet: true });
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(4000),
+  /** 0.0.0.0 = accessible sur le reseau local (Wi-Fi). 127.0.0.1 = localhost uniquement. */
+  HOST: z.string().default("0.0.0.0"),
+  /** URL publique affichee au demarrage (tunnel Cloudflare, ngrok, hebergement). */
+  PUBLIC_API_URL: z.string().url().optional(),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required."),
   JWT_SECRET: z
     .string()
@@ -15,6 +19,10 @@ const envSchema = z.object({
       (value) => value !== "change-this-super-secret-key-min-32-chars",
       "JWT_SECRET must not use the example value from .env.example.",
     ),
+  /** Duree de vie du JWT d'acces (ex. 15m, 1h). */
+  JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
+  /** Duree de vie du refresh token en jours (stocke en BDD). */
+  JWT_REFRESH_EXPIRES_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
   /** Uniquement en dev local : expose le token de reset dans la reponse JSON. */
   ALLOW_DEV_RESET_TOKEN: z

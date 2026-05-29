@@ -44,7 +44,15 @@ const authenticate = async (req, res, next) => {
       username: user.username,
     };
     return next();
-  } catch (_error) {
+  } catch (error) {
+    if (error?.name === "TokenExpiredError") {
+      return res.status(401).json({
+        error: {
+          message: "Access token expired.",
+          code: "ACCESS_TOKEN_EXPIRED",
+        },
+      });
+    }
     return res.status(401).json({ error: { message: "Invalid token." } });
   }
 };

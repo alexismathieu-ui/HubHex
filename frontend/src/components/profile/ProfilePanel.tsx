@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { readAvatarFile } from "../../lib/auth/avatarUpload";
 import { getDisplayName, getStatusLabel } from "../../lib/auth/userDisplay";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
-import { TOKEN_KEY } from "../../lib/auth/constants";
+import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "../../lib/auth/constants";
 import { translateProfileApiMessage } from "../../lib/auth/profileErrorMessages";
 import { buildProfilePatchBody } from "../../lib/auth/profileValidation";
 import { createAuthHeaders } from "../../lib/apiHeaders";
@@ -208,6 +208,9 @@ export function ProfilePanel() {
       if (data.token) {
         localStorage.setItem(TOKEN_KEY, data.token);
       }
+      if (data.refreshToken) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+      }
 
       setForm((prev) => ({
         ...prev,
@@ -221,7 +224,7 @@ export function ProfilePanel() {
       setMessage(data.message || "Profil mis a jour avec succes.");
       setMessageTone("success");
       setProfile(data.user);
-      setSession(data.token, data.user);
+      setSession(data.token, data.user, data.refreshToken);
     } catch (error: unknown) {
       setMessage(getErrorMessage(error));
       setMessageTone("error");

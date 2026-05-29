@@ -8,6 +8,7 @@
 @password = MotDePasse1
 @username = testuser
 @token = 
+@refreshToken = 
 
 ### Health
 GET {{baseUrl}}/api/health
@@ -22,13 +23,29 @@ Content-Type: application/json
   "password": "{{password}}"
 }
 
-### Login — copier le token de la reponse dans @token ci-dessus
+### Login — copier token et refreshToken dans les variables ci-dessus
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
   "email": "{{email}}",
   "password": "{{password}}"
+}
+
+### Refresh (nouveau access + refresh, rotation)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout (invalide le refresh)
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
 }
 
 ### Profil (connecte)

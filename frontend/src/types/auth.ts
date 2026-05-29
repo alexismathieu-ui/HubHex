@@ -8,9 +8,9 @@ export interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ token: string; user: User }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
-  setSession: (newToken: string, user: User) => void;
+  setSession: (newToken: string, user: User, refreshToken?: string) => void;
 }
 
 export interface AuthProviderProps {

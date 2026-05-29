@@ -10,12 +10,14 @@
     "normalize-emails": "node scripts/normalize-user-emails.js",
     "test": "node --test test/*.test.js",
     "db:export": "node scripts/export-schema.js",
-    "db:dump": "node scripts/export-full-database.js"
+    "db:dump": "node scripts/export-full-database.js",
+    "share": "npx --yes cloudflared tunnel --url http://127.0.0.1:4000"
   },
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

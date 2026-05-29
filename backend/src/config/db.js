@@ -109,6 +109,24 @@ const ensureDatabaseSchema = async () => {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      revoked_at TIMESTAMP WITH TIME ZONE,
+      user_agent TEXT,
+      ip_address VARCHAR(45),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id
+    ON refresh_tokens(user_id);
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS project_repositories (
       id SERIAL PRIMARY KEY,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

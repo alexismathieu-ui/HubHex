@@ -193,6 +193,9 @@ export interface ApiErrorBody {
 
 export interface AuthLoginResponse {
   token: string;
+  expiresIn?: number;
+  refreshToken?: string;
+  refreshExpiresAt?: string;
   user: User;
 }
 

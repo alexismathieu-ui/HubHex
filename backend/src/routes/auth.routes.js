@@ -4,7 +4,14 @@ const { z } = require("zod");
 
 const { pool } = require("../config/db");
 const { env } = require("../config/env");
-const { signAccessToken } = require("../lib/auth-token");
+const { clearRefreshTokenCookie, readRefreshTokenFromRequest } = require("../lib/auth-cookies");
+const { issueAuthSession } = require("../lib/auth-session");
+const { getAccessTokenExpiresInSeconds, signAccessToken } = require("../lib/auth-token");
+const {
+  findValidRefreshToken,
+  revokeAllUserRefreshTokens,
+  revokeRefreshToken,
+} = require("../lib/refresh-token");
 const {
   generateResetToken,
   hashResetToken,
@@ -182,19 +189,10 @@ authRouter.post("/login", authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: { message: "Invalid credentials." } });
     }
 
-    const token = signAccessToken(user);
+    const session = await issueAuthSession(req, res, user);
 
     return res.status(200).json({
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        display_name: user.display_name ?? null,
-        status_message: user.status_message ?? null,
-        status_emoji: user.status_emoji ?? null,
-        has_avatar: Boolean(user.has_avatar_data),
-      },
+      ...session,
       password_needs_upgrade: !passwordMeetsPolicy(payload.password),
     });
   } catch (error) {
@@ -280,6 +278,7 @@ authRouter.post("/reset-password", resetPasswordLimiter, async (req, res, next) 
       "UPDATE users SET password_hash = $1, password_changed_at = NOW() WHERE id = $2",
       [passwordHash, resetRow.user_id],
     );
+    await revokeAllUserRefreshTokens(resetRow.user_id);
     await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
       resetRow.user_id,
     ]);
@@ -287,6 +286,41 @@ authRouter.post("/reset-password", resetPasswordLimiter, async (req, res, next) 
     return res.status(200).json({
       message: "Mot de passe reinitialise. Tu peux te connecter.",
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.post("/refresh", authLimiter, async (req, res, next) => {
+  try {
+    const rawToken = readRefreshTokenFromRequest(req);
+    if (!rawToken) {
+      return res.status(401).json({ error: { message: "Refresh token manquant." } });
+    }
+
+    const row = await findValidRefreshToken(rawToken);
+    if (!row) {
+      clearRefreshTokenCookie(res);
+      return res.status(401).json({ error: { message: "Refresh token invalide ou expire." } });
+    }
+
+    await revokeRefreshToken(rawToken);
+    const session = await issueAuthSession(req, res, row);
+
+    return res.status(200).json(session);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+authRouter.post("/logout", async (req, res, next) => {
+  try {
+    const rawToken = readRefreshTokenFromRequest(req);
+    if (rawToken) {
+      await revokeRefreshToken(rawToken);
+    }
+    clearRefreshTokenCookie(res);
+    return res.status(200).json({ message: "Deconnexion effectuee." });
   } catch (error) {
     return next(error);
   }
@@ -427,8 +461,13 @@ authRouter.patch("/me", authenticate, profileLimiter, async (req, res, next) => 
       user,
     };
 
-    if (identityChanged || passwordChanged) {
+    if (passwordChanged) {
+      await revokeAllUserRefreshTokens(req.auth.userId);
+      const session = await issueAuthSession(req, res, updatedUser);
+      Object.assign(response, session);
+    } else if (identityChanged) {
       response.token = signAccessToken(updatedUser);
+      response.expiresIn = getAccessTokenExpiresInSeconds();
     }
 
     return res.status(200).json(response);
@@ -455,7 +494,9 @@ authRouter.delete("/me", authenticate, profileLimiter, async (req, res, next) =>
       return res.status(401).json({ error: { message: "Mot de passe incorrect." } });
     }
 
+    await revokeAllUserRefreshTokens(req.auth.userId);
     await pool.query("DELETE FROM users WHERE id = $1", [req.auth.userId]);
+    clearRefreshTokenCookie(res);
 
     return res.status(200).json({
       message: "Compte supprime definitivement.",

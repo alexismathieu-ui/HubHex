@@ -1,3 +1,4 @@
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const express = require("express");
 const helmet = require("helmet");
@@ -38,6 +39,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(cookieParser());
 app.use((req, res, next) => {
   const isFileImport = /\/files\/import-batch/i.test(req.originalUrl);
   const isProfilePatch = /\/api\/auth\/me/i.test(req.originalUrl) && req.method === "PATCH";
@@ -73,6 +75,8 @@ app.get("/", (_req, res) => {
       "/api/health",
       "/api/auth/register",
       "/api/auth/login",
+      "/api/auth/refresh",
+      "/api/auth/logout",
       "/api/auth/forgot-password",
       "/api/auth/reset-password",
       "/api/auth/me (GET, PATCH, DELETE)",
