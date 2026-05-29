@@ -114,3 +114,33 @@ export const buildPathLabel = (
 
   return "/";
 };
+
+/** Chemin relatif d'un fichier dans l'arborescence (ex. src/components/App.tsx). */
+export const buildFilePathForNode = (
+  items: ProjectFileListItem[],
+  tree: ProjectFileListItem[],
+  node: ProjectFileListItem,
+): string => {
+  const fromTree = findPathToNodeInTree(tree, node.id);
+  if (fromTree?.length) {
+    return fromTree.join("/");
+  }
+
+  const byId = new Map<number | null, ProjectFileListItem>();
+  for (const item of items) {
+    byId.set(normalizeId(item.id), item);
+  }
+
+  const parts: string[] = [];
+  let current: ProjectFileListItem | undefined = node;
+  const seen = new Set<number | null>();
+
+  while (current && !seen.has(normalizeId(current.id))) {
+    seen.add(normalizeId(current.id));
+    parts.unshift(current.name);
+    const parentKey = parentIdOf(current);
+    current = parentKey != null ? byId.get(parentKey) : undefined;
+  }
+
+  return parts.join("/");
+};

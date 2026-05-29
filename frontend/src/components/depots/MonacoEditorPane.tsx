@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { editor } from "monaco-editor";
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((mod) => mod.default), {
@@ -22,6 +22,7 @@ interface MonacoEditorPaneProps {
   path?: string;
   value: string;
   language: string;
+  tabSize?: number;
   onChange?: (value: string) => void;
   onSave?: () => void;
   onCursorChange?: (position: CursorPosition) => void;
@@ -35,6 +36,7 @@ export function MonacoEditorPane({
   path,
   value,
   language,
+  tabSize = 2,
   onChange,
   onSave,
   onCursorChange,
@@ -44,6 +46,7 @@ export function MonacoEditorPane({
   readOnly = false,
 }: MonacoEditorPaneProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<typeof import("monaco-editor") | null>(null);
   const onSaveRef = useRef(onSave);
   const onChangeRef = useRef(onChange);
   const onCursorRef = useRef(onCursorChange);
@@ -62,9 +65,11 @@ export function MonacoEditorPane({
       minimap: { enabled: showMinimap },
       scrollBeyondLastLine: false,
       wordWrap: (wordWrap ? "on" : "off") as "on" | "off",
-      tabSize: 2,
+      tabSize,
       insertSpaces: true,
       detectIndentation: true,
+      formatOnPaste: true,
+      formatOnType: false,
       bracketPairColorization: { enabled: true },
       renderWhitespace: "selection" as const,
       smoothScrolling: true,
@@ -84,15 +89,42 @@ export function MonacoEditorPane({
         indentation: true,
       },
     }),
-    [readOnly, fontSize, showMinimap, wordWrap],
+    [readOnly, fontSize, showMinimap, wordWrap, tabSize],
   );
+
+  useEffect(() => {
+    const mountedEditor = editorRef.current;
+    const monaco = monacoRef.current;
+    const model = mountedEditor?.getModel();
+    if (!mountedEditor || !monaco || !model) {
+      return;
+    }
+    if (model.getLanguageId() !== language) {
+      monaco.editor.setModelLanguage(model, language);
+    }
+    model.updateOptions({ tabSize, insertSpaces: true });
+  }, [language, tabSize]);
 
   const handleMount = (mountedEditor: editor.IStandaloneCodeEditor, monaco: typeof import("monaco-editor")) => {
     editorRef.current = mountedEditor;
+    monacoRef.current = monaco;
+
+    const model = mountedEditor.getModel();
+    if (model && model.getLanguageId() !== language) {
+      monaco.editor.setModelLanguage(model, language);
+    }
+    model?.updateOptions({ tabSize, insertSpaces: true });
 
     mountedEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       onSaveRef.current?.();
     });
+
+    mountedEditor.addCommand(
+      monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+      () => {
+        void mountedEditor.getAction("editor.action.formatDocument")?.run();
+      },
+    );
 
     mountedEditor.onDidChangeCursorPosition((event) => {
       onCursorRef.current?.({

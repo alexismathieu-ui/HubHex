@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { getDisplayName } from "../../lib/auth/userDisplay";
 import { UserAvatar } from "../profile/UserAvatar";
+import { HubHexLogo } from "./HubHexLogo";
 
 const NAV_ITEMS = [
   { href: "/tableau-de-bord", label: "Tableau de bord" },
@@ -23,9 +24,7 @@ export function AppNav() {
     <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
         <div className="flex items-center gap-6">
-          <Link href="/tableau-de-bord" className="text-lg font-bold text-cyan-300 hover:text-cyan-200">
-            HubHex
-          </Link>
+          <HubHexLogo href="/tableau-de-bord" size={32} />
           <nav className="flex flex-wrap gap-1">
             {NAV_ITEMS.map((item) => {
               const active =

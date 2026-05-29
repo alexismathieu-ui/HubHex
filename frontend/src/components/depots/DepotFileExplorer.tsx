@@ -16,6 +16,7 @@ import {
 } from "../../lib/depots/fileImportUtils";
 import { formatMaxFileSize } from "../../lib/depots/importLimits";
 import {
+  buildFilePathForNode,
   buildPathLabel,
   collectFolderIds,
   findNodeById,
@@ -233,18 +234,22 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
   const [openTabs, setOpenTabs] = useState<EditorTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
 
-  const openFileInEditor = useCallback((node: ProjectFileListItem | null) => {
-    if (!node || node.kind !== "file") {
-      return;
-    }
-    setOpenTabs((prev) => {
-      if (prev.some((tab) => tab.id === node.id)) {
-        return prev;
+  const openFileInEditor = useCallback(
+    (node: ProjectFileListItem | null) => {
+      if (!node || node.kind !== "file") {
+        return;
       }
-      return [...prev, { id: node.id, name: node.name, dirty: false }];
-    });
-    setActiveTabId(node.id);
-  }, []);
+      setOpenTabs((prev) => {
+        if (prev.some((tab) => tab.id === node.id)) {
+          return prev;
+        }
+        const path = buildFilePathForNode(items, tree, node);
+        return [...prev, { id: node.id, name: node.name, path, dirty: false }];
+      });
+      setActiveTabId(node.id);
+    },
+    [items, tree],
+  );
 
   const closeTab = useCallback((tabId: number) => {
     setOpenTabs((prev) => {

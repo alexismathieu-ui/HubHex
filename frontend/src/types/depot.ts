@@ -12,6 +12,8 @@ export interface DepotFormFields {
 export interface EditorTab {
   id: number;
   name: string;
+  /** Chemin relatif dans le depot (ex. src/App.cs) pour Monaco / coloration. */
+  path?: string;
   dirty?: boolean;
 }
 

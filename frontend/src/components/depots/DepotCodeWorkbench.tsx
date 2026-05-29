@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { createAuthHeaders } from "../../lib/apiHeaders";
-import { fileIconLabel, languageFromFileName } from "../../lib/depots/editorLanguage";
+import {
+  fileIconLabel,
+  languageDisplayLabel,
+  languageFromFileName,
+  tabSizeForLanguage,
+} from "../../lib/depots/editorLanguage";
 import { getErrorMessage } from "../../lib/errors";
 import { readApiJsonOrThrow } from "../../lib/readApiJson";
 import type { EditorTab, FileContentCacheEntry } from "../../types/depot";
@@ -69,7 +74,9 @@ export function DepotCodeWorkbench({
   const [reloadNonce, setReloadNonce] = useState(0);
 
   const isDirty = content !== savedContent;
-  const language = activeTab ? languageFromFileName(activeTab.name) : "plaintext";
+  const editorFilePath = activeTab?.path || activeTab?.name || "";
+  const language = editorFilePath ? languageFromFileName(editorFilePath) : "plaintext";
+  const tabSize = tabSizeForLanguage(language);
   const canEdit = encoding !== "base64" && Boolean(activeTabId);
 
   contentRef.current = content;
@@ -283,7 +290,9 @@ export function DepotCodeWorkbench({
                 onClick={() => onActivateTab(tab.id)}
                 className="flex min-w-0 flex-1 items-center gap-1.5 px-3 py-2 hover:bg-[#323232]"
               >
-                <span className="font-mono text-[10px] text-slate-500">{fileIconLabel(tab.name)}</span>
+                <span className="font-mono text-[10px] text-slate-500">
+                  {fileIconLabel(tab.path || tab.name)}
+                </span>
                 <span className="truncate">{tab.name}</span>
                 {tab.dirty ? <span className="text-cyan-400">●</span> : null}
               </button>
@@ -386,10 +395,11 @@ export function DepotCodeWorkbench({
           </div>
         ) : activeTabId ? (
           <MonacoEditorPane
-            key={activeTabId}
-            path={activeTab?.name}
+            key={`${activeTabId}-${language}`}
+            path={editorFilePath ? `/${editorFilePath}` : undefined}
             value={content}
             language={language}
+            tabSize={tabSize}
             onChange={handleContentChange}
             onSave={onSave}
             onCursorChange={setCursor}
@@ -404,9 +414,9 @@ export function DepotCodeWorkbench({
         <span>
           Ln {cursor.line}, Col {cursor.column}
         </span>
-        <span>{language}</span>
+        <span>{languageDisplayLabel(language)}</span>
         <span>UTF-8</span>
-        <span>Espaces: 2</span>
+        <span>Espaces: {tabSize}</span>
         {isDirty ? <span className="text-amber-200">Modifie</span> : <span>Enregistre</span>}
         <span className="ml-auto opacity-80">Ctrl+S</span>
       </div>

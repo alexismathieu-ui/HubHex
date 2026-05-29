@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { ForgotPasswordPanel } from "../../components/auth/ForgotPasswordPanel";
+import { HubHexLogo } from "../../components/layout/HubHexLogo";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { getErrorMessage } from "../../lib/errors";
@@ -83,9 +84,7 @@ function ConnexionContent() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-14">
       <div className="mx-auto max-w-4xl">
-        <Link href="/" className="text-sm font-semibold uppercase tracking-widest text-cyan-300">
-          HubHex
-        </Link>
+        <HubHexLogo href="/" size={40} />
         <h1 className="mt-4 text-3xl font-bold">Connexion</h1>
         <p className="mt-2 text-slate-400">Accede a tes depots, au Kanban et a la communaute.</p>
 
