@@ -123,14 +123,18 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
             Entre l&apos;email de ton compte. En developpement, le code s&apos;affiche ici (en
             production, il serait envoye par email).
           </p>
-          <input
-            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            type="email"
-            placeholder="Email du compte"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
+          <label className="flex flex-col gap-1 text-sm text-slate-300">
+            Email du compte
+            <input
+              id="forgot-email"
+              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
           <button
             className="rounded-lg border border-cyan-700 bg-cyan-950/40 px-4 py-2 text-sm font-semibold text-cyan-200 hover:border-cyan-500"
             type="submit"
@@ -153,29 +157,40 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
               <p className="mt-2 break-all font-mono text-xs text-cyan-100">{resetToken}</p>
             </div>
           ) : null}
-          <input
-            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-mono"
-            placeholder="Code de reinitialisation (64 caracteres)"
-            value={resetToken}
-            onChange={(event) => setResetToken(event.target.value)}
-            required
-          />
-          <input
-            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            type="password"
-            placeholder="Nouveau mot de passe (8+ car., lettre + chiffre)"
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            required
-          />
-          <input
-            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            type="password"
-            placeholder="Confirmer le nouveau mot de passe"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-          />
+          <label className="flex flex-col gap-1 text-sm text-slate-300">
+            Code de reinitialisation
+            <input
+              id="reset-token"
+              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-mono focus-visible:ring-2 focus-visible:ring-cyan-400"
+              value={resetToken}
+              onChange={(event) => setResetToken(event.target.value)}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-300">
+            Nouveau mot de passe
+            <input
+              id="reset-password"
+              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-300">
+            Confirmer le mot de passe
+            <input
+              id="reset-password-confirm"
+              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+            />
+          </label>
           <button
             className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-400"
             type="submit"

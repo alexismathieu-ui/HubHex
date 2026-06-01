@@ -9,7 +9,7 @@ Plateforme web de gestion de projets pour developpeurs : depots heberges sur Hub
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | Backend | Express 5, Node.js |
 | BDD | PostgreSQL |
-| Auth | JWT (localStorage `hubhex_token`) |
+| Auth | JWT access court (15 min) + refresh (7 j, rotation) ; cookie HttpOnly cote API |
 
 ## Demarrage rapide
 
@@ -80,6 +80,7 @@ HubHex/
 | `backend/npm test` | Tests automatises (node:test) |
 | `backend/npm run db:export` | Export schema vers `database/hubhex_schema.sql` |
 | `backend/npm run db:dump` | Export complet (structure + donnees) vers `database/hubhex_full_dump.sql` |
+| `backend/npm run share` | Tunnel public Cloudflare vers l'API (audit jury) |
 | `backend/npm run reset-password -- email NouveauMdp1!` | Reset MDP admin |
 
 ## Documentation
@@ -92,16 +93,17 @@ HubHex/
 - [Documentation technique](docs/DOCUMENTATION_TECHNIQUE.md)
 - [Scenario de demo soutenance](docs/SCENARIO_DEMO.md)
 - [Support presentation](docs/SOUTENANCE.md)
+- [Checklist jour J soutenance](docs/CHECKLIST_JOUR_J.md)
 
 ## Livrables CDC
 
 - Code source frontend + backend (ce depot)
-- Export BDD : `database/hubhex_schema.sql` (structure) et `npm run db:dump` pour un dump complet avec donnees (`database/hubhex_full_dump.sql`, non versionne)
+- Export BDD : regenerer avant remise avec `cd backend && npm run db:export` (`database/hubhex_schema.sql`) ; dump complet avec `npm run db:dump` (`database/hubhex_full_dump.sql`, non versionne)
 - Documentation utilisateur et technique (`docs/`)
 - Support de presentation (`docs/SOUTENANCE.md`)
 
 ## Securite (resume)
 
-- Mots de passe bcrypt (cost 12), JWT avec invalidation si changement MDP
+- Mots de passe bcrypt (cost 12), JWT access court + refresh rotatif, invalidation si changement MDP
 - Helmet, CORS, rate limits, validation Zod
 - En production : configurer `SMTP_*` pour le reset password (ne pas exposer `ALLOW_DEV_RESET_TOKEN`)

@@ -115,9 +115,11 @@ Liste des routes en dev : **http://localhost:4000/**
 
 1. `GET` Health  
 2. `POST` Register (une seule fois par email)  
-3. `POST` Login → copier le champ `token` de la reponse  
+3. `POST` Login → copier `token` et `refreshToken` de la reponse  
 4. Coller le token dans la variable `@token` en haut du fichier  
-5. `GET` Profil, Dashboard, Projets publics, etc.
+5. `POST` Refresh (optionnel) — renouveler la session  
+6. `GET` Profil, Dashboard, Projets publics, etc.  
+7. `POST` Logout — fin de session
 
 Variables en tete de `hubhex.http` (modifiables) :
 
@@ -189,7 +191,9 @@ curl http://localhost:4000/api/auth/me ^
 |---------|-------|------|-------------|
 | GET | `/api/health` | Non | Verifier que l’API repond |
 | POST | `/api/auth/register` | Non | Inscription |
-| POST | `/api/auth/login` | Non | Connexion → JWT |
+| POST | `/api/auth/login` | Non | Connexion → JWT access + refresh |
+| POST | `/api/auth/refresh` | Non* | Renouveler access (+ rotation refresh) |
+| POST | `/api/auth/logout` | Non* | Revocation refresh |
 | GET | `/api/auth/me` | Bearer | Profil utilisateur |
 | GET | `/api/projects` | Bearer | Liste des depots |
 | POST | `/api/projects` | Bearer | Creer un depot |
@@ -198,7 +202,7 @@ curl http://localhost:4000/api/auth/me ^
 | GET | `/api/templates` | Bearer | Modeles de depot |
 | GET | `/api/graph/relations` | Bearer | Graphe entre depots |
 
-\* Certaines routes communaute acceptent un token optionnel.
+\* `/refresh` et `/logout` : body JSON `{ "refreshToken": "..." }` et/ou cookie `hubhex_refresh` (HttpOnly). Certaines routes communaute acceptent un token optionnel.
 
 En-tete d’authentification pour les routes protegees :
 

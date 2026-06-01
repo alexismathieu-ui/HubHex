@@ -17,6 +17,7 @@ const { Pool } = require("pg");
 
 const TABLES_IN_FK_ORDER = [
   "users",
+  "refresh_tokens",
   "project_templates",
   "projects",
   "password_reset_tokens",

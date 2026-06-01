@@ -1,5 +1,7 @@
 # Scenario de demonstration (5–10 min)
 
+Checklist jour J : [CHECKLIST_JOUR_J.md](CHECKLIST_JOUR_J.md)
+
 ## Accroche (30 s)
 
 > HubHex n'est pas seulement un gestionnaire de taches : c'est un hub ou chaque depot est heberge sur la plateforme, avec une stack documentee, un journal de decisions et un graphe qui relie vos projets dans le temps.

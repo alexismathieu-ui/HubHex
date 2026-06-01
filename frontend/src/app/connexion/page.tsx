@@ -11,6 +11,9 @@ import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { getErrorMessage } from "../../lib/errors";
 import { formatApiError } from "../../lib/formatApiError";
 
+const inputClass =
+  "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 focus-visible:ring-2 focus-visible:ring-cyan-400";
+
 function ConnexionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -95,77 +98,105 @@ function ConnexionContent() {
           >
             <h2 className="text-lg font-semibold">Inscription</h2>
             <div className="mt-4 flex flex-col gap-3">
-              <input
-                className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                placeholder="Nom d'utilisateur"
-                value={registerForm.username}
-                onChange={(event) =>
-                  setRegisterForm({ ...registerForm, username: event.target.value })
-                }
-                required
-              />
-              <input
-                className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                type="email"
-                placeholder="Email"
-                value={registerForm.email}
-                onChange={(event) =>
-                  setRegisterForm({ ...registerForm, email: event.target.value })
-                }
-                required
-              />
-              <input
-                className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                type="password"
-                placeholder="Mot de passe"
-                value={registerForm.password}
-                onChange={(event) =>
-                  setRegisterForm({ ...registerForm, password: event.target.value })
-                }
-                required
-              />
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                Nom d&apos;utilisateur
+                <input
+                  id="register-username"
+                  className={inputClass}
+                  autoComplete="username"
+                  value={registerForm.username}
+                  onChange={(event) =>
+                    setRegisterForm({ ...registerForm, username: event.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                Email
+                <input
+                  id="register-email"
+                  className={inputClass}
+                  type="email"
+                  autoComplete="email"
+                  value={registerForm.email}
+                  onChange={(event) =>
+                    setRegisterForm({ ...registerForm, email: event.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                Mot de passe
+                <input
+                  id="register-password"
+                  className={inputClass}
+                  type="password"
+                  autoComplete="new-password"
+                  value={registerForm.password}
+                  onChange={(event) =>
+                    setRegisterForm({ ...registerForm, password: event.target.value })
+                  }
+                  required
+                />
+              </label>
               <button
                 type="submit"
-                className="rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950"
+                className="rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-slate-950 focus-visible:ring-2 focus-visible:ring-cyan-200"
               >
                 Creer un compte
               </button>
-              <p className="text-sm text-slate-300">{registerMessage}</p>
+              {registerMessage ? (
+                <p className="text-sm text-slate-300" role="alert">
+                  {registerMessage}
+                </p>
+              ) : null}
             </div>
           </form>
 
           <article className="rounded-xl border border-slate-800 bg-slate-900 p-5">
             <h2 className="text-lg font-semibold">Connexion</h2>
             <form className="mt-4 flex flex-col gap-3" onSubmit={onLoginSubmit}>
-              <input
-                className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                type="email"
-                placeholder="Email"
-                value={loginForm.email}
-                onChange={(event) =>
-                  setLoginForm({ ...loginForm, email: event.target.value })
-                }
-                required
-              />
-              <input
-                className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                type="password"
-                placeholder="Mot de passe"
-                value={loginForm.password}
-                onChange={(event) =>
-                  setLoginForm({ ...loginForm, password: event.target.value })
-                }
-                required
-              />
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                Email
+                <input
+                  id="login-email"
+                  className={inputClass}
+                  type="email"
+                  autoComplete="email"
+                  value={loginForm.email}
+                  onChange={(event) =>
+                    setLoginForm({ ...loginForm, email: event.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                Mot de passe
+                <input
+                  id="login-password"
+                  className={inputClass}
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginForm.password}
+                  onChange={(event) =>
+                    setLoginForm({ ...loginForm, password: event.target.value })
+                  }
+                  required
+                />
+              </label>
               <button
                 type="submit"
-                className="rounded-lg bg-slate-100 px-4 py-2 font-semibold text-slate-900"
+                className="rounded-lg bg-slate-100 px-4 py-2 font-semibold text-slate-900 focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
                 Se connecter
               </button>
             </form>
             <ForgotPasswordPanel initialResetToken={searchParams.get("reset") || ""} />
-            <p className="mt-3 text-sm text-slate-300">{loginMessage}</p>
+            {loginMessage ? (
+              <p className="mt-3 text-sm text-slate-300" role="alert">
+                {loginMessage}
+              </p>
+            ) : null}
           </article>
         </div>
       </div>

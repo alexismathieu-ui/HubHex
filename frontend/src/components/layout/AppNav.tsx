@@ -33,7 +33,8 @@ export function AppNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-md px-3 py-1.5 text-sm transition ${
+                  aria-current={active ? "page" : undefined}
+                  className={`rounded-md px-3 py-1.5 text-sm transition focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                     active
                       ? "bg-cyan-950/60 font-medium text-cyan-200"
                       : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"

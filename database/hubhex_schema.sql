@@ -1,5 +1,5 @@
 -- HubHex — export schema
--- Genere le 2026-05-22T08:51:36.592Z
+-- Genere le 2026-06-01T08:19:48.733Z
 BEGIN;
 
 -- users
@@ -50,6 +50,16 @@ BEGIN;
 --   user_id integer NOT NULL
 --   token_hash text NOT NULL
 --   expires_at timestamp with time zone NOT NULL
+--   created_at timestamp with time zone NULL DEFAULT now()
+
+-- refresh_tokens
+--   id integer NOT NULL DEFAULT nextval('refresh_tokens_id_seq'::regclass)
+--   user_id integer NOT NULL
+--   token_hash text NOT NULL
+--   expires_at timestamp with time zone NOT NULL
+--   revoked_at timestamp with time zone NULL
+--   user_agent text NULL
+--   ip_address character varying NULL
 --   created_at timestamp with time zone NULL DEFAULT now()
 
 -- project_repositories

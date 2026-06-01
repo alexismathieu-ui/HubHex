@@ -1,11 +1,77 @@
 ================================================================================
 HUBHEX — ETAT DU PROJET (fait / reste a faire)
 ================================================================================
-Document mis a jour le 26 mai 2026 — frontend TypeScript strict, checklist locale,
-retrait seed-demo, correctif securite dompurify.
+Document mis a jour le 29 mai 2026 — pour reprise par un agent / developpeur.
 
-Progression globale estimee pour la soutenance CDC : environ 88 a 92 % du cahier des
-charges fonctionnel ; livrables documentaires ~78 % ; differentiation implementee (~82 %).
+Ce fichier resume l'etat reel du depot apres les dernieres sessions (export BDD,
+logo, editeur Monaco, partage API par lien, JWT + refresh token, docs securite).
+
+Progression globale estimee soutenance CDC : ~88–92 % fonctionnel ;
+livrables documentaires ~80 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
+
+================================================================================
+0. RESUME POUR LE PROCHAIN AGENT (lecture rapide)
+================================================================================
+
+QU'EST-CE QUE HUBHEX ?
+  Plateforme web type mini-GitHub interne : depots heberges sur HubHex, Kanban,
+  fichiers + editeur Monaco, communaute, differentiation (stack, journal, templates,
+  graphe). Monorepo Next.js 16 (front TS strict) + Express 5 (back JS) + PostgreSQL.
+
+DEMARRAGE LOCAL
+  Terminal 1 : cd backend && npm run dev     → http://localhost:4000
+  Terminal 2 : cd frontend && npm run dev    → http://localhost:3000
+  Checklist : docs/CHECKLIST_DEMARRAGE_LOCAL.md
+
+AUTH (important — change recemment)
+  - Access JWT court : JWT_ACCESS_EXPIRES_IN=15m (defaut)
+  - Refresh token 7 j : table refresh_tokens, hash SHA-256 en BDD
+  - Routes : POST /api/auth/login, /refresh, /logout
+  - Front : localStorage hubhex_token + hubhex_refresh ; renouvellement auto ~14 min
+  - cookie-parser + cookie HttpOnly hubhex_refresh sur path /api/auth
+  - Revocation refresh : logout, changement MDP, reset MDP, suppression compte
+
+PARTAGER L'API AU PROF / AUDIT CYBER (sans qu'il installe le projet)
+  1. npm run dev (backend)
+  2. npm run share (tunnel Cloudflare → URL *.trycloudflare.com)
+  3. Envoyer : https://XXX.trycloudflare.com/api/health
+  Guide : docs/GUIDE_LIEN_API.md
+  Tests manuels (commandes PowerShell) : docs/TESTS_SECURITE.md
+  Pas de script npm test:security (retire sur demande utilisateur).
+
+EXPORT BASE DE DONNEES
+  - npm run db:export  → database/hubhex_schema.sql (structure commentee)
+  - npm run db:dump    → database/hubhex_full_dump.sql (complet, gitignore)
+  Script : backend/scripts/export-full-database.js
+
+LOGO / FAVICON
+  - frontend/public/logo.png
+  - frontend/src/app/icon.png, apple-icon.png (favicon Next.js)
+  - Composant HubHexLogo.tsx (AppNav, page connexion)
+  - Ancien favicon.ico Next.js supprime (evitait icone triangle)
+
+EDITEUR MONACO (type VS Code)
+  - Detection langage par extension/chemin : frontend/src/lib/depots/editorLanguage.ts
+  - Chemin complet fichier dans onglet (buildFilePathForNode) pour .cs, .js, .tsx, etc.
+  - tabSize selon langage ; format Shift+Alt+F ; MonacoEditorPane.tsx
+
+NE PAS FAIRE SANS DEMANDE EXPLICITE
+  - Commit / push git
+  - Reactiver un script automatique test:security (supprime)
+  - Exposer le tunnel Cloudflare en permanence (risque securite)
+
+FICHIERS CREES / MODIFIES RECEMMENT (session mai 2026)
+  backend/scripts/export-full-database.js
+  backend/src/lib/refresh-token.js, auth-cookies.js, auth-session.js, network-addresses.js
+  backend/src/routes/auth.routes.js (refresh/logout)
+  backend/src/config/db.js (table refresh_tokens)
+  backend/src/config/env.js (JWT_ACCESS_EXPIRES_IN, JWT_REFRESH_EXPIRES_DAYS, HOST, PUBLIC_API_URL)
+  backend/src/server.js (ecoute HOST 0.0.0.0, affichage lien LAN/tunnel)
+  frontend/src/components/layout/HubHexLogo.tsx
+  frontend/src/lib/depots/editorLanguage.ts (enrichi)
+  frontend/src/context/AuthContext.tsx (refresh)
+  docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md
+  database/.gitignore (hubhex_full_dump.sql)
 
 ================================================================================
 1. VISION ET ARCHITECTURE
@@ -19,25 +85,21 @@ Stack :
   - Frontend : Next.js 16 (App Router), React 19, TypeScript strict, Tailwind 4, Monaco
   - Backend  : Express 5, Node.js (JavaScript) — port 4000
   - BDD      : PostgreSQL (schema au boot via ensureDatabaseSchema())
-  - Auth     : JWT HS256 (localStorage hubhex_token), invalidation si changement MDP
+  - Auth     : JWT access court (15m) + refresh token (7j, BDD + cookie HttpOnly)
 
 Monorepo :
   HubHex/
-    backend/          API Express (JS) + scripts (export schema, tests, reset-password)
-    frontend/         Application Next.js (100 % .ts / .tsx, tsconfig strict)
-    database/         hubhex_schema.sql (export structure)
-    docs/             Doc utilisateur, technique, soutenance, checklist demarrage
+    backend/          API Express (JS) + scripts
+    frontend/         Application Next.js (.ts / .tsx, strict)
+    database/         hubhex_schema.sql + .gitignore dump complet
+    docs/             Documentation + guides prof / securite
     postman/          Collection tests API
-    http/             Fichiers REST Client
+    http/             hubhex.http (REST Client, inclut refresh/logout)
     README.md
     HubHex_plan_complet.txt
     HubHex_etat_projet.txt (ce fichier)
 
 Depot GitHub : https://github.com/alexismathieu-ui/HubHex
-
-Demarrage local (detail) : docs/CHECKLIST_DEMARRAGE_LOCAL.md
-  Terminal 1 : cd backend && npm run dev   → http://localhost:4000
-  Terminal 2 : cd frontend && npm run dev  → http://localhost:3000
 
 ================================================================================
 2. CE QUI A ETE FAIT — PAR ZONE
@@ -49,13 +111,16 @@ Demarrage local (detail) : docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [x] Structure monorepo frontend + backend
 [x] PostgreSQL + schema au boot
 [x] Variables d'environnement Zod (backend/.env.example)
-[x] Scripts npm backend : dev, test, db:export, db:dump, reset-password
+[x] Scripts npm backend :
+      dev, test, db:export, db:dump, reset-password, share (cloudflared tunnel)
 [x] Scripts npm frontend : dev, build, start, lint
-[x] README racine + checklist docs/CHECKLIST_DEMARRAGE_LOCAL.md
+[x] README + docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [x] Depot GitHub public (alexismathieu-ui/HubHex)
+[x] API ecoute HOST=0.0.0.0 (reseau local) ; PUBLIC_API_URL optionnel dans .env
+[x] cookie-parser pour refresh HttpOnly
 [~] Logs morgan — pas de winston/pino structure
-[ ] Hebergement cloud (optionnel, non prioritaire)
-[~] Commit / push des derniers changements locaux (migration TS front) si pas fait
+[ ] Hebergement cloud (optionnel)
+[~] Commit / push des derniers changements locaux si pas fait
 
 --------------------------------------------------------------------------------
 2.1 BASE DE DONNEES
@@ -63,6 +128,7 @@ Demarrage local (detail) : docs/CHECKLIST_DEMARRAGE_LOCAL.md
 Tables au boot :
 
   users, projects, tasks, comments, password_reset_tokens
+  refresh_tokens (nouveau — sessions refresh hash SHA-256)
   project_files (arborescence text/base64)
   project_repositories (legacy, peu utilise cote API)
   project_technical_notes
@@ -72,166 +138,200 @@ Tables au boot :
   project_relations (graphe entre depots)
 
 [x] Entites CDC de base
-[x] Tables differentiation (notes, stack, journal, templates, relations)
+[x] Tables differentiation
 [x] Templates systeme seedes au boot (3 modeles)
 [x] Export schema : database/hubhex_schema.sql + npm run db:export
-[x] Pas de seed-demo automatique (compte cree a l'inscription)
+[x] Dump complet : npm run db:dump → database/hubhex_full_dump.sql (gitignore)
+[x] Pas de seed-demo automatique
 [ ] Migrations SQL versionnees (fichiers par version)
-[x] Dump complet BDD : npm run db:dump (pg_dump si dispo, sinon export Node)
 
 --------------------------------------------------------------------------------
-2.2 BACKEND — API (/api) — JavaScript, ~90–95 % CDC
+2.2 BACKEND — API (/api) — JavaScript, ~92–95 % CDC
 --------------------------------------------------------------------------------
-[x] Express 5, helmet, CORS (localhost + IP LAN :3000 en dev)
-[x] Rate limits : actifs en production ; OFF en dev (ENABLE_RATE_LIMIT=false)
+[x] Express 5, helmet, CORS (localhost:3000, FRONTEND_URL, credentials)
+[x] Rate limits : prod ou ENABLE_RATE_LIMIT=true ; OFF par defaut en dev
 [x] GET /api/health, doc endpoints en dev sur GET /
 
-AUTH : register, login, forgot/reset password, GET/PATCH/DELETE /me
-       SMTP nodemailer si SMTP_* configure ; sinon ALLOW_DEV_RESET_TOKEN (dev)
+AUTH :
+  register, login, forgot/reset password
+  GET/PATCH/DELETE /me
+  POST /api/auth/refresh (rotation refresh)
+  POST /api/auth/logout (revocation refresh + clear cookie)
+  JWT access : JWT_ACCESS_EXPIRES_IN (defaut 15m)
+  Refresh : JWT_REFRESH_EXPIRES_DAYS (defaut 7), table refresh_tokens
+  Invalidation access si password_changed_at > iat du JWT
+  SMTP nodemailer si SMTP_* ; sinon ALLOW_DEV_RESET_TOKEN (dev uniquement)
 
 UTILISATEURS : GET /:username/public, GET /:username/avatar
 
-PROJETS : CRUD + slug ; sous-routes files, tasks, notes, stack, journal
+PROJETS : CRUD + slug ; files, tasks, notes, stack, journal
 
-FICHIERS :
-  GET / (arbre), GET /:fileId (contenu editeur), GET /:fileId/download (binaire)
-  POST, PATCH, DELETE, move, paste, import-batch
+FICHIERS : arbre, contenu, download, CRUD, move, paste, import-batch
 
 TACHES : CRUD Kanban (todo | in_progress | done)
 
-COMMUNAUTE : projets publics, recherche, filtres, commentaires, suppression moderee
+COMMUNAUTE : projets publics, recherche, filtres, commentaires
 
 DASHBOARD : resume + activite
 
-DIFFERENTIATION :
-  GET/POST /api/templates, POST /api/templates/apply
-  GET/POST /api/graph/relations, DELETE relations
-  CRUD /projects/:id/notes, /stack, /journal
+DIFFERENTIATION : templates, graphe, notes, stack, journal
 
-SECURITE : bcrypt 12, JWT, validation Zod, rate limits (prod), scripts admin MDP
+SECURITE : bcrypt 12, Zod, helmet, rate limits (si actives), refresh rotation
 
-Reste backend (non bloquant soutenance) :
+Reste backend (non bloquant) :
 [ ] SMTP reel production
-[ ] Tests integration routes API (supertest)
+[ ] Tests integration supertest
 [ ] Logs structures (winston/pino)
 [ ] Migrations SQL versionnees
+[ ] Access JWT en cookie httpOnly (refresh deja HttpOnly ; access reste localStorage)
 
 --------------------------------------------------------------------------------
 2.3 FRONTEND — TypeScript strict, ~90–95 % CDC
 --------------------------------------------------------------------------------
-Migration : tous les fichiers src/ en .ts / .tsx — strict: true, build Next valide.
-
-Types partages :
-  frontend/src/types/hubhex.ts, depot.ts, profile.ts, auth.ts, community.ts
-Helpers :
-  frontend/src/lib/apiHeaders.ts (createAuthHeaders)
-  frontend/src/lib/errors.ts (getErrorMessage)
-
-Routes :
-  /, /connexion, /tableau-de-bord, /depots, /depots/[id], /communaute, /profil
-  /graphe, /utilisateurs/[username]
-
-[x] Auth complete + reset MDP
-[x] Profil (avatar, pseudo, statut, activite, suppression compte)
-[x] Depots : CRUD, templates a la creation, onglets :
-      Fichiers | Kanban | Stack | Journal | Notes | Parametres
-[x] Explorateur fichiers + import ZIP + editeur Monaco (onglets, Ctrl+S, minimap)
-[x] Kanban drag & drop
-[x] Communaute + profils publics
-[x] Graphe HubHex (relations entre depots)
-[x] UI Tailwind slate/cyan (pas de shadcn — teste puis retire)
-[x] Correctif Dependabot : dompurify >= 3.4.0 (override via monaco-editor)
-[x] npx tsc --noEmit + npm run build OK
+[x] Migration .ts / .tsx — strict: true, build OK
+[x] Auth + refresh automatique (AuthContext.tsx, hubhex_refresh)
+[x] Profil, depots, Monaco, Kanban, communaute, graphe
+[x] Logo HubHex + favicon (HubHexLogo, public/logo.png, app/icon.png)
+[x] Editeur : coloration syntaxique auto par extension (editorLanguage.ts)
+[x] Chemin fichier complet dans onglets editeur (buildFilePathForNode)
+[x] dompurify >= 3.4.0 (override monaco-editor)
 
 --------------------------------------------------------------------------------
-2.4 TESTS / OUTILS
+2.4 TESTS / OUTILS / PARTAGE API
 --------------------------------------------------------------------------------
-[x] Tests backend node:test (npm test) — auth helpers, slugs, connectivite BDD
-[x] Postman + http/hubhex.http
-[x] Scripts reset-password, export-schema
+[x] Tests backend node:test (npm test) — auth, slugs, refresh hash, TTL access
+[x] Postman : postman/HubHex.postman_collection.json + environnement local
+[x] REST Client : http/hubhex.http (health, auth, refresh, logout, dashboard…)
+[x] Tunnel public : npm run share (cloudflared → trycloudflare.com)
+[x] Guides :
+      docs/GUIDE_LIEN_API.md      — lien pour prof sans installation
+      docs/GUIDE_TEST_API.md      — installer + tester API en local
+      docs/TESTS_SECURITE.md      — checklist + commandes PowerShell manuelles
+[x] Commandes securite : PAS de script npm automatique (supprime volontairement)
 
-Demo soutenance : creer un compte sur /connexion, preparer 1 depot public + parcours
-docs/SCENARIO_DEMO.md (pas de compte demo automatique).
+Demo soutenance : docs/SCENARIO_DEMO.md — compte cree a l'inscription.
 
 --------------------------------------------------------------------------------
 2.5 DOCUMENTATION LIVRABLES CDC
 --------------------------------------------------------------------------------
-[x] README.md
-[x] docs/DOCUMENTATION_TECHNIQUE.md (inclut section TypeScript)
+[x] README.md (liens guides prof, securite, export BDD)
+[x] docs/DOCUMENTATION_TECHNIQUE.md (export BDD, stack)
 [x] docs/DOCUMENTATION_UTILISATEUR.md
 [x] docs/CHECKLIST_DEMARRAGE_LOCAL.md
-[x] docs/SOUTENANCE.md (slides markdown)
+[x] docs/SOUTENANCE.md
 [x] docs/SCENARIO_DEMO.md
 [x] database/hubhex_schema.sql
 [ ] Captures d'ecran doc utilisateur
-[ ] Support slides export PDF/PowerPoint si demande par le jury
-[ ] CDC PDF final a refaire (stack TypeScript front a y integrer)
+[ ] Slides export PDF/PPT
+[ ] CDC PDF final (mentionner TS front + refresh token)
 
 ================================================================================
-3. CE QUI RESTE A FAIRE — PRIORISE
+3. CONFIGURATION .env BACKEND (rappel)
+================================================================================
+
+Obligatoire :
+  DATABASE_URL=postgresql://...
+  JWT_SECRET=32+ caracteres aleatoires
+  FRONTEND_URL=http://localhost:3000
+
+Recommande dev :
+  ENABLE_RATE_LIMIT=false
+  ALLOW_DEV_RESET_TOKEN=false
+  HOST=0.0.0.0
+  JWT_ACCESS_EXPIRES_IN=15m
+  JWT_REFRESH_EXPIRES_DAYS=7
+
+Optionnel :
+  PUBLIC_API_URL=https://xxx.trycloudflare.com  (apres npm run share)
+  SMTP_* pour reset password par email
+
+Pour audit cyber avec rate limits :
+  ENABLE_RATE_LIMIT=true  puis redemarrer l'API
+
+================================================================================
+4. CE QUI RESTE A FAIRE — PRIORISE
 ================================================================================
 
 PRIORITE HAUTE (avant jury)
-[ ] Commiter et pousser sur GitHub (migration TS frontend + docs si pas encore fait)
-[ ] Verifier demarrage local une fois : docs/CHECKLIST_DEMARRAGE_LOCAL.md
-[ ] Parcours demo complet avec votre compte (docs/SCENARIO_DEMO.md)
-[x] Export complet : npm run db:dump → database/hubhex_full_dump.sql
-[ ] Relire / exporter docs/SOUTENANCE.md en PDF ou PPT
+[ ] git commit / push si pas fait
+[ ] Parcours demo docs/SCENARIO_DEMO.md
+[ ] Tester lien tunnel une fois (npm run dev + npm run share)
+[ ] npm run db:dump pour livrable SQL avec donnees si demande
+[ ] Relire docs/SOUTENANCE.md → PDF/PPT
 
 PRIORITE MOYENNE
-[ ] SMTP reel pour reset password (compte mail ecole)
-[ ] Captures d'ecran pour doc utilisateur
-[ ] Refaire le document CDC (cahier des charges) avec stack TypeScript front
+[ ] SMTP reel reset password
+[ ] Captures doc utilisateur
+[ ] CDC PDF a jour
 [ ] Moderation avancee (signalements)
 
 PRIORITE BASSE
 [ ] Migrations SQL versionnees
-[ ] Backend en TypeScript (optionnel)
-[ ] Hebergement cloud
-[ ] Object storage S3 pour fichiers
-[ ] JWT httpOnly / refresh token
-[ ] Accessibilite WCAG audit
+[ ] Backend TypeScript
+[ ] Hebergement cloud stable (Render/Railway) au lieu du tunnel temporaire
+[ ] Access JWT en cookie httpOnly (refresh deja en cookie)
+[ ] Accessibilite WCAG
 
 ================================================================================
-4. ESTIMATION PAR BLOC (%)
+5. ESTIMATION PAR BLOC (%)
 ================================================================================
 
-  Auth + profil + reset           ~95 %
+  Auth + refresh + profil         ~92 %
   Projets / depots / slugs        ~95 %
-  Fichiers + editeur Monaco       ~90 %
-  Kanban (drag & drop)            ~90 %
+  Fichiers + editeur Monaco       ~92 %
+  Kanban                          ~90 %
   Communaute + profils publics    ~85 %
   Dashboard                       ~80 %
   Differentiation CDC             ~82 %
-  Securite de base                ~88 %
-  Frontend TypeScript strict      ~95 % (code) / qualite types OK
-  Backend API (JS)                ~92 %
-  Docs / README / SQL / slides    ~78 %
+  Securite (JWT court, refresh)   ~90 %
+  Frontend TypeScript             ~95 %
+  Backend API (JS)                ~93 %
+  Docs + guides prof/securite     ~82 %
 
 ================================================================================
-5. FICHIERS POINT D'ENTREE
+6. FICHIERS POINT D'ENTREE
 ================================================================================
 
   API boot              backend/src/server.js
   Schema BDD            backend/src/config/db.js
+  Auth routes           backend/src/routes/auth.routes.js
+  JWT / refresh libs    backend/src/lib/auth-token.js, refresh-token.js, auth-session.js
   Auth front            frontend/src/context/AuthContext.tsx
-  Types API             frontend/src/types/hubhex.ts
+  Logo                  frontend/src/components/layout/HubHexLogo.tsx
+  Langage editeur       frontend/src/lib/depots/editorLanguage.ts
   Editeur               frontend/src/components/depots/DepotCodeWorkbench.tsx
-  Explorateur           frontend/src/components/depots/DepotFileExplorer.tsx
-  Config TS             frontend/tsconfig.json
-  Checklist locale      docs/CHECKLIST_DEMARRAGE_LOCAL.md
+  Export BDD complet    backend/scripts/export-full-database.js
+  Tunnel API            npm run share (backend/package.json)
+  Tests securite (doc)  docs/TESTS_SECURITE.md
+  Lien public prof      docs/GUIDE_LIEN_API.md
   Etat projet           HubHex_etat_projet.txt
 
 ================================================================================
-6. PROCHAINES ACTIONS SUGGEREES
+7. TESTS SECURITE RAPIDES (commandes — rappel)
+================================================================================
+
+$base = "http://localhost:4000"   # ou URL trycloudflare
+
+  Invoke-RestMethod "$base/api/health"
+  # 401 sans token : GET $base/api/projects
+  # login → token + refreshToken
+  # GET $base/api/auth/me -Headers @{ Authorization = "Bearer $token" }
+  # POST $base/api/auth/refresh -Body '{"refreshToken":"..."}'
+  # SQLi : GET "$base/api/community/projects?q=' OR 1=1 --"  → 200, projects vide OK
+  # IDOR : compte B + GET $base/api/projects/{idA}/tasks → 403/404 attendu
+
+Detail complet : docs/TESTS_SECURITE.md
+
+================================================================================
+8. PROCHAINES ACTIONS SUGGEREES
 ================================================================================
 
   1. cd backend && npm run dev  +  cd frontend && npm run dev
-  2. Cocher docs/CHECKLIST_DEMARRAGE_LOCAL.md
-  3. git add / commit / push (migration TypeScript frontend)
-  4. Parcours demo docs/SCENARIO_DEMO.md
-  5. npm run db:dump (complet) ou db:export (schema seul) selon consignes jury
-  6. Exporter slides docs/SOUTENANCE.md
+  2. Verifier JWT_ACCESS_EXPIRES_IN et JWT_REFRESH_EXPIRES_DAYS dans backend/.env
+  3. Pour le prof : npm run share → envoyer URL /api/health + docs/GUIDE_LIEN_API.md
+  4. Tests securite manuels : docs/TESTS_SECURITE.md
+  5. git commit / push
+  6. Parcours demo SCENARIO_DEMO.md
 
 ================================================================================
 FIN DU DOCUMENT

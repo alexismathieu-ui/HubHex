@@ -7,14 +7,14 @@
 **HubHex**  
 Plateforme de gestion et de partage de projets developpeur
 
-*Votre nom — Date*
+*Votre nom — Promo CODA B1 — Date*
 
 ---
 
 ## Slide 2 — Contexte CDC
 
 - Application web individuelle
-- React/Next.js + Node.js + PostgreSQL
+- Next.js (TypeScript) + Node.js + PostgreSQL
 - Gestion projets, taches Kanban, communaute, recherche
 
 ---
@@ -31,15 +31,15 @@ Plateforme de gestion et de partage de projets developpeur
 
 | Frontend | Backend | Donnees |
 |----------|---------|---------|
-| Next.js 16 | Express 5 | PostgreSQL |
-| React 19 | JWT + bcrypt | Schema au boot |
-| Tailwind 4 | Zod, Helmet | Fichiers en BDD |
+| Next.js 16, TS strict | Express 5 | PostgreSQL |
+| React 19, Tailwind 4 | JWT access 15 min + refresh 7 j | Schema au boot + export SQL |
+| Monaco (editeur) | bcrypt, Zod, Helmet | 13 tables |
 
 ---
 
 ## Slide 5 — Fonctionnalites CDC
 
-- Auth complete + profil enrichi
+- Auth complete + profil enrichi + reset MDP (SMTP ou dev)
 - CRUD depots, visibilite public/prive
 - Kanban 3 colonnes (+ drag & drop)
 - Communaute : recherche, filtres, commentaires
@@ -68,9 +68,10 @@ Plateforme de gestion et de partage de projets developpeur
 ## Slide 8 — Securite
 
 - Mots de passe hashes (bcrypt 12)
-- JWT, invalidation si changement MDP
-- Rate limits, CORS, validation entrees
-- Reset password par email (SMTP) en production
+- **JWT access court (15 min)** + **refresh token (7 j)** avec rotation en BDD
+- Cookie refresh **HttpOnly** ; revocation au logout / changement MDP
+- Rate limits, CORS, validation Zod, Helmet
+- Reset password par email (`SMTP_*`) en production
 
 ---
 
@@ -78,16 +79,28 @@ Plateforme de gestion et de partage de projets developpeur
 
 Voir `SCENARIO_DEMO.md` — 5 a 10 minutes
 
----
-
-## Slide 10 — Livrables & perspectives
-
-- Code GitHub, export SQL, documentation
-- Tests API automatises
-- Pistes : object storage fichiers, refresh token httpOnly, moderation avancee
+Checklist jour J : `CHECKLIST_JOUR_J.md`
 
 ---
 
-## Slide 11 — Questions
+## Slide 10 — Livrables
+
+- Code GitHub (monorepo front + back)
+- Export BDD : `hubhex_schema.sql` + `npm run db:dump` sur demande
+- Documentation utilisateur et technique
+- Tests securite documentes (`TESTS_SECURITE.md`)
+- Tunnel API pour audit (`npm run share` + `GUIDE_LIEN_API.md`)
+
+---
+
+## Slide 11 — Architecture (oral)
+
+- **Vue** : pages Next.js + composants (`components/`)
+- **Controle** : hooks, `AuthContext`, appels API (`lib/`)
+- **Modele** : types TypeScript + API REST Express
+
+---
+
+## Slide 12 — Questions
 
 Merci pour votre attention.

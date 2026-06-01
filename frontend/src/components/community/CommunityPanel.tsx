@@ -188,7 +188,7 @@ export function CommunityPanel() {
     <article className="rounded-xl border border-sky-800/60 bg-sky-950/25 p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-sky-200">Communaute</h3>
+          <h2 className="text-xl font-semibold text-sky-200">Explorer la communaute</h2>
           <p className="mt-1 text-sm text-sky-300/80">
             Decouvre les projets publics et echange via les commentaires.
           </p>
@@ -207,25 +207,32 @@ export function CommunityPanel() {
         <p className="text-sm font-semibold uppercase tracking-wide text-sky-300/90">
           Recherche & filtres
         </p>
-        <input
-          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-          type="search"
-          placeholder="Mots-cles (titre, description, auteur, techno...)"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-        />
-        <select
-          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-          value={technologyFilter}
-          onChange={(event) => setTechnologyFilter(event.target.value)}
-        >
+        <label className="flex flex-col gap-1 text-sm text-slate-300">
+          Recherche par mots-cles
+          <input
+            id="community-search"
+            className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-slate-300">
+          Technologie
+          <select
+            id="community-technology"
+            className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+            value={technologyFilter}
+            onChange={(event) => setTechnologyFilter(event.target.value)}
+          >
           <option value="">Toutes les technologies</option>
-          {TECH_TAGS.map((tag) => (
+            {TECH_TAGS.map((tag) => (
             <option key={tag} value={tag}>
               {tag}
             </option>
           ))}
         </select>
+        </label>
         <div className="flex flex-wrap gap-2">
           <button
             className={`rounded-lg px-3 py-1.5 text-sm ${
@@ -400,20 +407,23 @@ export function CommunityPanel() {
                       className="mt-4 flex flex-col gap-2"
                       onSubmit={(event) => onCommentSubmit(event, project.id)}
                     >
-                      <textarea
-                        className="min-h-[72px] rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-                        placeholder="Ton commentaire..."
-                        value={newComment[project.id] || ""}
+                      <label className="flex flex-col gap-1 text-sm text-slate-300">
+                        Commentaire
+                        <textarea
+                          id={`comment-${project.id}`}
+                          className="min-h-[72px] rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+                          value={newComment[project.id] || ""}
                         onChange={(event) =>
                           setNewComment((prev) => ({
                             ...prev,
                             [project.id]: event.target.value,
                           }))
                         }
-                        required
-                      />
+                          required
+                        />
+                      </label>
                       <button
-                        className="self-start rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-400"
+                        className="self-start rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-400 focus-visible:ring-2 focus-visible:ring-cyan-300"
                         type="submit"
                       >
                         Publier

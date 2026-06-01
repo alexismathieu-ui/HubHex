@@ -192,11 +192,12 @@ export function TasksBoard({ token, projectId }: TasksBoardProps) {
               </button>
             ) : null}
             <button
-              className="ml-auto rounded border border-red-900/50 px-1.5 py-0.5 text-[10px] text-red-300 hover:border-red-700"
+              className="ml-auto rounded border border-red-900/50 px-1.5 py-0.5 text-[10px] text-red-300 hover:border-red-700 focus-visible:ring-2 focus-visible:ring-red-400"
               type="button"
+              aria-label="Supprimer la tache"
               onClick={() => deleteTask(task.id)}
             >
-              X
+              Supprimer
             </button>
           </div>
         </div>
@@ -220,12 +221,15 @@ export function TasksBoard({ token, projectId }: TasksBoardProps) {
       <p className="mt-1 text-xs text-slate-500">{message}</p>
 
       <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={onCreate}>
-        <input
-          className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
-          placeholder="Nouvelle tache (titre)"
-          value={newTitle}
-          onChange={(event) => setNewTitle(event.target.value)}
-        />
+        <label className="flex flex-1 flex-col gap-1 text-sm text-slate-300">
+          Nouvelle tache
+          <input
+            id="kanban-new-task"
+            className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+            value={newTitle}
+            onChange={(event) => setNewTitle(event.target.value)}
+          />
+        </label>
         <button
           className="rounded-md bg-cyan-500/20 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/30"
           type="submit"
