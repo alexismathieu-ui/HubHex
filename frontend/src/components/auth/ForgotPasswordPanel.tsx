@@ -100,7 +100,7 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/80 p-4">
+    <div className="mt-4 rounded-lg border border-slate-700/60 bg-slate-950/50 p-4 backdrop-blur-sm">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-slate-200">Reinitialiser le mot de passe</p>
         <button
@@ -127,7 +127,7 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
             Email du compte
             <input
               id="forgot-email"
-              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+              className="rounded-lg border border-slate-700/80 bg-slate-950/70 px-3 py-2 font-mono text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
               type="email"
               autoComplete="email"
               value={email}
@@ -161,7 +161,7 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
             Code de reinitialisation
             <input
               id="reset-token"
-              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-mono focus-visible:ring-2 focus-visible:ring-cyan-400"
+              className="rounded-lg border border-slate-700/80 bg-slate-950/70 px-3 py-2 font-mono text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
               value={resetToken}
               onChange={(event) => setResetToken(event.target.value)}
               required
@@ -171,7 +171,7 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
             Nouveau mot de passe
             <input
               id="reset-password"
-              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+              className="rounded-lg border border-slate-700/80 bg-slate-950/70 px-3 py-2 font-mono text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
               type="password"
               autoComplete="new-password"
               value={newPassword}
@@ -183,7 +183,7 @@ export function ForgotPasswordPanel({ initialResetToken = "" }: ForgotPasswordPa
             Confirmer le mot de passe
             <input
               id="reset-password-confirm"
-              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
+              className="rounded-lg border border-slate-700/80 bg-slate-950/70 px-3 py-2 font-mono text-sm focus-visible:ring-2 focus-visible:ring-cyan-400"
               type="password"
               autoComplete="new-password"
               value={confirmPassword}

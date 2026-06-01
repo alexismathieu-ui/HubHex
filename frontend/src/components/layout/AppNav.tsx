@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "../../context/AuthContext";
 import { getDisplayName } from "../../lib/auth/userDisplay";
@@ -18,13 +18,19 @@ const NAV_ITEMS = [
 
 export function AppNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser, logout } = useAuth();
+
+  const onLogout = async () => {
+    await logout();
+    router.push("/");
+  };
 
   return (
     <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
-        <div className="flex items-center gap-6">
-          <HubHexLogo href="/tableau-de-bord" size={32} />
+      <div className="mx-auto flex min-h-[4rem] max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
+        <div className="flex items-center gap-4">
+          <HubHexLogo href="/tableau-de-bord" size={48} className="shrink-0" />
           <nav className="flex flex-wrap gap-1">
             {NAV_ITEMS.map((item) => {
               const active =
@@ -58,7 +64,7 @@ export function AppNav() {
               </Link>
               <button
                 type="button"
-                onClick={logout}
+                onClick={onLogout}
                 className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-300 hover:border-slate-500"
               >
                 Deconnexion

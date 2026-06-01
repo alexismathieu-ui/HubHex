@@ -10,10 +10,11 @@
 6. [Premier compte](#premier-compte)
 7. [Captures d'ecran](#captures-decran)
 
-## Connexion
+## Accueil et connexion
 
-1. Ouvrir http://localhost:3000
-2. Aller sur **Connexion** pour s'inscrire ou se connecter
+1. Ouvrir http://localhost:3000 — page d'accueil avec presentation des fonctionnalites
+2. **Inscription** (`/inscription`) ou **Connexion** (`/connexion`) — pages separees
+3. Apres connexion, vous arrivez sur le **tableau de bord**
 3. Mot de passe oublie : un email est envoye si SMTP est configure ; sinon le token peut apparaitre en mode developpement
 4. La session se renouvelle automatiquement (refresh token) tant que vous restez connecte
 

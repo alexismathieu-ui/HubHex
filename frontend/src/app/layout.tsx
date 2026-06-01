@@ -1,23 +1,34 @@
 import type { ReactNode } from "react";
-import { Geist } from "next/font/google";
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
 import { Providers } from "../components/providers/Providers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata = {
-  title: "HubHex",
-  description: "Plateforme de gestion et partage de projets developpeur.",
+  title: "HubHex — Gestion et partage de projets developpeur",
+  description:
+    "Hebergez vos depots, organisez vos taches en Kanban, editez vos fichiers et partagez avec la communaute.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-slate-950 text-slate-100">
+    <html
+      lang="fr"
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col bg-slate-950 font-display text-slate-100">
         <Providers>{children}</Providers>
       </body>
     </html>
