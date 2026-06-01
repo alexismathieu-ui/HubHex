@@ -39,6 +39,7 @@ Plateforme de gestion et de partage de projets developpeur
 
 ## Slide 5 — Fonctionnalites CDC
 
+- **Page d'accueil** (landing) pour visiteurs ; connexion / inscription ; redirection vers le tableau de bord si deja connecte
 - Auth complete + profil enrichi + reset MDP (SMTP ou dev)
 - CRUD depots, visibilite public/prive
 - Kanban 3 colonnes (+ drag & drop)
@@ -68,18 +69,20 @@ Plateforme de gestion et de partage de projets developpeur
 ## Slide 8 — Securite
 
 - Mots de passe hashes (bcrypt 12)
-- **JWT access court (15 min)** + **refresh token (7 j)** avec rotation en BDD
+- **JWT access court (15 min)** + **refresh token (7 j)** avec rotation en BDD (**implemente**, pas roadmap)
 - Cookie refresh **HttpOnly** ; revocation au logout / changement MDP
-- Rate limits, CORS, validation Zod, Helmet
+- **Frontend** : renouvellement silencieux (~14 min) + retry sur 401 (`AuthContext`) — session transparente en demo
+- Rate limits (`ENABLE_RATE_LIMIT=true` pour demo jury), CORS, validation Zod, Helmet
+- Logs requetes : **Morgan** (`dev` / `combined`)
 - Reset password par email (`SMTP_*`) en production
 
 ---
 
 ## Slide 9 — Demo live
 
-Voir `SCENARIO_DEMO.md` — 5 a 10 minutes
+Voir [SCENARIO_DEMO.md](SCENARIO_DEMO.md) — 5 a 10 minutes (variante 6 etapes ~5 min)
 
-Checklist jour J : `CHECKLIST_JOUR_J.md`
+Checklist jour J : [CHECKLIST_JOUR_J.md](CHECKLIST_JOUR_J.md) — grille orale : [ORAL_GRILLE_B1.md](ORAL_GRILLE_B1.md)
 
 ---
 

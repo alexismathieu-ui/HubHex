@@ -6,6 +6,28 @@ Remplacez `BASE` par votre URL (`http://localhost:4000` ou tunnel Cloudflare).
 
 ---
 
+## Exécution jury
+
+> **Template** — a remplir le jour de la soutenance ou de l'audit cyber. Ne pas cocher avant d'avoir reellement execute le test. Indiquer la date du jour (format JJ/MM/AAAA).
+
+| # | Test (section) | Date d'execution | OK |
+|---|----------------|------------------|-----|
+| 1 | A — Authentification et tokens (A1–A8) | ____/____/2026 | [ ] |
+| 2 | B — Controle d'acces IDOR (B1–B3) | ____/____/2026 | [ ] |
+| 3 | C — Validation et injections (C1–C4) | ____/____/2026 | [ ] |
+| 4 | D — Rate limiting (D1–D2, `ENABLE_RATE_LIMIT=true`) | ____/____/2026 | [ ] |
+| 5 | E — Exposition et transport (E1–E3) | ____/____/2026 | [ ] |
+| 6 | F — Donnees sensibles (F1–F2) | ____/____/2026 | [ ] |
+
+**Notes jury** (optionnel) :
+
+- Auditeur / correcteur :
+- URL `BASE` utilisee :
+- Comptes de test :
+- Observations :
+
+---
+
 ## A. Authentification et tokens
 
 ### A1 — Health (sans auth)
@@ -133,6 +155,8 @@ Poster `<script>alert(1)</script>` en commentaire sur un projet public, reaffich
 ---
 
 ## D. Limitation d’abus (rate limiting)
+
+**Demo soutenance / jury cyber** : copier `ENABLE_RATE_LIMIT=true` depuis `backend/.env.example` (ou basculer la variable dans `backend/.env`), **redemarrer l’API**, puis executer D1–D2. En developpement quotidien, laisser `false` pour eviter des 429 intempestifs pendant l’edition de fichiers. Voir aussi [CHECKLIST_JOUR_J.md](CHECKLIST_JOUR_J.md) (section Securite).
 
 Mettre `ENABLE_RATE_LIMIT=true` dans `.env`, redemarrer l’API.
 

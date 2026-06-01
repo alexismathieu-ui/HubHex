@@ -2,21 +2,36 @@
 
 ## Sommaire
 
-1. [Connexion](#connexion)
-2. [Mes depots](#mes-depots)
-3. [Graphe HubHex](#graphe-hubhex)
-4. [Communaute](#communaute)
-5. [Profil](#profil)
-6. [Premier compte](#premier-compte)
-7. [Captures d'ecran](#captures-decran)
+1. [Page d'accueil](#page-daccueil)
+2. [Inscription](#inscription)
+3. [Connexion](#connexion)
+4. [Mes depots](#mes-depots)
+5. [Graphe HubHex](#graphe-hubhex)
+6. [Communaute](#communaute)
+7. [Profil](#profil)
+8. [Premier compte](#premier-compte)
+9. [Captures d'ecran](#captures-decran)
 
-## Accueil et connexion
+## Page d'accueil
 
-1. Ouvrir http://localhost:3000 — page d'accueil avec presentation des fonctionnalites
-2. **Inscription** (`/inscription`) ou **Connexion** (`/connexion`) — pages separees
-3. Apres connexion, vous arrivez sur le **tableau de bord**
-3. Mot de passe oublie : un email est envoye si SMTP est configure ; sinon le token peut apparaitre en mode developpement
-4. La session se renouvelle automatiquement (refresh token) tant que vous restez connecte
+- URL : **http://localhost:3000/** (route `/`)
+- Presentation des fonctionnalites HubHex, liens vers inscription et connexion
+- Apercu Kanban anime sur la page (vitrine, sans compte requis)
+- Si vous etes deja connecte, redirection automatique vers le **tableau de bord**
+
+## Inscription
+
+- URL : **http://localhost:3000/inscription** (route `/inscription`)
+- Formulaire dedie : pseudo, email, mot de passe fort
+- Apres inscription reussie, connexion puis acces au tableau de bord
+
+## Connexion
+
+- URL : **http://localhost:3000/connexion** (route `/connexion`)
+- Page separee de l'inscription (plus d'onglets communs sur une seule page)
+- Lien **S'inscrire** vers `/inscription` si vous n'avez pas encore de compte
+- Mot de passe oublie : un email est envoye si SMTP est configure ; sinon le token peut apparaitre en mode developpement
+- La session se renouvelle automatiquement (refresh token) tant que vous restez connecte
 
 ## Mes depots
 
@@ -48,7 +63,7 @@ Menu **Graphe** : reliez vos depots (meme techno, inspire de, suite de…) pour 
 
 ## Premier compte
 
-Aucun compte n'est cree automatiquement. Sur **Connexion**, utilisez **S'inscrire** avec un mot de passe fort (majuscule, minuscule, chiffre, symbole).
+Aucun compte n'est cree automatiquement. Depuis l'**accueil** (`/`), cliquez sur **Commencer** ou **S'inscrire**, ou ouvrez directement `/inscription`. Mot de passe fort requis (majuscule, minuscule, chiffre, symbole).
 
 Demarrage local : voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.md).
 
@@ -57,6 +72,7 @@ Demarrage local : voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.
 Ajoutez vos captures dans le dossier `docs/assets/` (voir [assets/README.md](assets/README.md)), puis decommentez les lignes ci-dessous :
 
 <!--
+![Accueil](assets/00-accueil.png)
 ![Connexion](assets/01-connexion.png)
 ![Tableau de bord](assets/02-dashboard.png)
 ![Kanban](assets/03-kanban.png)

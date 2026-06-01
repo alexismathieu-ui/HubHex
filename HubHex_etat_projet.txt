@@ -1,13 +1,14 @@
 ================================================================================
 HUBHEX — ETAT DU PROJET (fait / reste a faire)
 ================================================================================
-Document mis a jour le 29 mai 2026 — pour reprise par un agent / developpeur.
+Document mis a jour le 1 juin 2026 — pour reprise par un agent / developpeur.
 
-Ce fichier resume l'etat reel du depot apres les dernieres sessions (export BDD,
-logo, editeur Monaco, partage API par lien, JWT + refresh token, docs securite).
+Ce fichier resume l'etat reel du depot apres les dernieres sessions (page accueil,
+inscription/connexion separees, fond techno souris, apercu Kanban landing, export BDD,
+logo tailles unifiees, editeur Monaco, partage API par lien, JWT + refresh token).
 
-Progression globale estimee soutenance CDC : ~88–92 % fonctionnel ;
-livrables documentaires ~80 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
+Progression globale estimee soutenance CDC : ~90–93 % fonctionnel ;
+livrables documentaires ~85 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
 
 ================================================================================
 0. RESUME POUR LE PROCHAIN AGENT (lecture rapide)
@@ -21,6 +22,8 @@ QU'EST-CE QUE HUBHEX ?
 DEMARRAGE LOCAL
   Terminal 1 : cd backend && npm run dev     → http://localhost:4000
   Terminal 2 : cd frontend && npm run dev    → http://localhost:3000
+  Page accueil : http://localhost:3000/  (visiteur non connecte)
+  Inscription : /inscription  |  Connexion : /connexion
   Checklist : docs/CHECKLIST_DEMARRAGE_LOCAL.md
 
 AUTH (important — change recemment)
@@ -44,10 +47,19 @@ EXPORT BASE DE DONNEES
   - npm run db:dump    → database/hubhex_full_dump.sql (complet, gitignore)
   Script : backend/scripts/export-full-database.js
 
+PAGES PUBLIQUES (accueil + auth)
+  - / : LandingPage (hero, fonctionnalites, CTA inscription/connexion)
+        Redirection auto vers /tableau-de-bord si deja connecte
+  - /inscription : formulaire inscription (AuthPageChrome), page dediee
+  - /connexion : login + lien vers inscription (pages separees, plus d'onglets communs)
+  - PublicPageShell : fond slate + CodeAnimatedBackground (spotlight souris ~340px)
+  - KanbanPreviewWindow : mini-fenetre Kanban animee sur l'accueil (rotation auto / pause au survol)
+
 LOGO / FAVICON
   - frontend/public/logo.png
   - frontend/src/app/icon.png, apple-icon.png (favicon Next.js)
-  - Composant HubHexLogo.tsx (AppNav, page connexion)
+  - HubHexLogo.tsx : prop size en px (defaut 48) ; texte adaptatif (base / lg / xl selon size)
+  - Tailles en usage : 48px — accueil (header), AppNav, AuthPageChrome (/inscription, /connexion)
   - Ancien favicon.ico Next.js supprime (evitait icone triangle)
 
 EDITEUR MONACO (type VS Code)
@@ -60,17 +72,21 @@ NE PAS FAIRE SANS DEMANDE EXPLICITE
   - Reactiver un script automatique test:security (supprime)
   - Exposer le tunnel Cloudflare en permanence (risque securite)
 
-FICHIERS CREES / MODIFIES RECEMMENT (session mai 2026)
+FICHIERS CREES / MODIFIES RECEMMENT (session juin 2026)
+  frontend/src/app/page.tsx (accueil + redirect si auth)
+  frontend/src/app/inscription/page.tsx
+  frontend/src/app/connexion/page.tsx (separe de l'inscription)
+  frontend/src/components/landing/LandingPage.tsx
+  frontend/src/components/landing/KanbanPreviewWindow.tsx
+  frontend/src/components/layout/PublicPageShell.tsx
+  frontend/src/components/background/CodeAnimatedBackground.tsx
+  frontend/src/components/auth/AuthPageChrome.tsx
   backend/scripts/export-full-database.js
   backend/src/lib/refresh-token.js, auth-cookies.js, auth-session.js, network-addresses.js
   backend/src/routes/auth.routes.js (refresh/logout)
-  backend/src/config/db.js (table refresh_tokens)
-  backend/src/config/env.js (JWT_ACCESS_EXPIRES_IN, JWT_REFRESH_EXPIRES_DAYS, HOST, PUBLIC_API_URL)
-  backend/src/server.js (ecoute HOST 0.0.0.0, affichage lien LAN/tunnel)
-  frontend/src/components/layout/HubHexLogo.tsx
-  frontend/src/lib/depots/editorLanguage.ts (enrichi)
+  frontend/src/components/layout/HubHexLogo.tsx (tailles parametriques)
   frontend/src/context/AuthContext.tsx (refresh)
-  docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md
+  docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md, CHECKLIST_JOUR_J.md
   database/.gitignore (hubhex_full_dump.sql)
 
 ================================================================================
@@ -186,12 +202,15 @@ Reste backend (non bloquant) :
 [ ] Access JWT en cookie httpOnly (refresh deja HttpOnly ; access reste localStorage)
 
 --------------------------------------------------------------------------------
-2.3 FRONTEND — TypeScript strict, ~90–95 % CDC
+2.3 FRONTEND — TypeScript strict, ~92–96 % CDC
 --------------------------------------------------------------------------------
 [x] Migration .ts / .tsx — strict: true, build OK
+[x] Page accueil / (LandingPage) ; /inscription et /connexion separees
+[x] PublicPageShell + CodeAnimatedBackground (effet techno au survol souris)
+[x] KanbanPreviewWindow sur l'accueil (apercu Kanban marketing)
 [x] Auth + refresh automatique (AuthContext.tsx, hubhex_refresh)
 [x] Profil, depots, Monaco, Kanban, communaute, graphe
-[x] Logo HubHex + favicon (HubHexLogo, public/logo.png, app/icon.png)
+[x] Logo HubHex + favicon (HubHexLogo size=48 partout public/app ; favicon app/icon.png)
 [x] Editeur : coloration syntaxique auto par extension (editorLanguage.ts)
 [x] Chemin fichier complet dans onglets editeur (buildFilePathForNode)
 [x] dompurify >= 3.4.0 (override monaco-editor)
@@ -209,7 +228,7 @@ Reste backend (non bloquant) :
       docs/TESTS_SECURITE.md      — checklist + commandes PowerShell manuelles
 [x] Commandes securite : PAS de script npm automatique (supprime volontairement)
 
-Demo soutenance : docs/SCENARIO_DEMO.md — compte cree a l'inscription.
+Demo soutenance : docs/SCENARIO_DEMO.md — depart accueil / puis /inscription.
 
 --------------------------------------------------------------------------------
 2.5 DOCUMENTATION LIVRABLES CDC
@@ -221,7 +240,7 @@ Demo soutenance : docs/SCENARIO_DEMO.md — compte cree a l'inscription.
 [x] docs/SOUTENANCE.md
 [x] docs/SCENARIO_DEMO.md
 [x] database/hubhex_schema.sql
-[ ] Captures d'ecran doc utilisateur
+[ ] Captures d'ecran doc utilisateur (6 PNG manuels dans docs/assets/)
 [ ] Slides export PDF/PPT
 [ ] CDC PDF final (mentionner TS front + refresh token)
 
@@ -286,7 +305,8 @@ PRIORITE BASSE
   Securite (JWT court, refresh)   ~90 %
   Frontend TypeScript             ~95 %
   Backend API (JS)                ~93 %
-  Docs + guides prof/securite     ~82 %
+  Pages publiques (accueil/auth)  ~95 %
+  Docs + guides prof/securite     ~85 %
 
 ================================================================================
 6. FICHIERS POINT D'ENTREE
@@ -296,6 +316,11 @@ PRIORITE BASSE
   Schema BDD            backend/src/config/db.js
   Auth routes           backend/src/routes/auth.routes.js
   JWT / refresh libs    backend/src/lib/auth-token.js, refresh-token.js, auth-session.js
+  Accueil               frontend/src/app/page.tsx → LandingPage.tsx
+  Inscription           frontend/src/app/inscription/page.tsx
+  Connexion             frontend/src/app/connexion/page.tsx
+  Fond public           frontend/src/components/background/CodeAnimatedBackground.tsx
+  Apercu Kanban accueil frontend/src/components/landing/KanbanPreviewWindow.tsx
   Auth front            frontend/src/context/AuthContext.tsx
   Logo                  frontend/src/components/layout/HubHexLogo.tsx
   Langage editeur       frontend/src/lib/depots/editorLanguage.ts

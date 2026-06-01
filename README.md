@@ -46,11 +46,15 @@ npm run dev
 
 Application : http://localhost:3000
 
+- **Page d'accueil** : http://localhost:3000/
+- **Inscription** : http://localhost:3000/inscription
+- **Connexion** : http://localhost:3000/connexion
+
 Variable optionnelle : `NEXT_PUBLIC_API_URL=http://localhost:4000/api`
 
 **Checklist detaillee** : [docs/CHECKLIST_DEMARRAGE_LOCAL.md](docs/CHECKLIST_DEMARRAGE_LOCAL.md)
 
-Premier usage : inscrivez-vous sur http://localhost:3000/connexion (pas de compte demo automatique).
+Premier usage : page d'accueil http://localhost:3000/ puis **S'inscrire** (`/inscription`) — pas de compte demo automatique.
 
 ## Structure du monorepo
 

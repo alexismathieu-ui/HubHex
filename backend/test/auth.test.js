@@ -33,6 +33,11 @@ describe("auth helpers", () => {
     assert.equal(hashRefreshToken("abc"), hashRefreshToken("abc"));
   });
 
+  it("hashRefreshToken produit un digest SHA-256 hex (64 caracteres)", () => {
+    const digest = hashRefreshToken("token-demo");
+    assert.match(digest, /^[a-f0-9]{64}$/);
+  });
+
   it("access token TTL par defaut ~ 15 minutes", () => {
     const seconds = getAccessTokenExpiresInSeconds();
     assert.ok(seconds >= 14 * 60 && seconds <= 16 * 60);

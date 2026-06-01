@@ -17,7 +17,7 @@ Cochez au fur et a mesure. Ordre conseille le matin meme.
 - [ ] `database/hubhex_schema.sql` regenere (`npm run db:export`) — metadonnees + table `refresh_tokens`
 - [ ] Dump complet si demande : `npm run db:dump` → `database/hubhex_full_dump.sql` (non versionne)
 - [ ] Support : [SOUTENANCE.md](SOUTENANCE.md) exporte en PDF/PPT
-- [ ] Captures dans `docs/assets/` referencees dans [DOCUMENTATION_UTILISATEUR.md](DOCUMENTATION_UTILISATEUR.md)
+- [ ] Captures `docs/assets/` (6 PNG manuels : accueil, connexion, dashboard, kanban, graphe, communaute) referencees dans [DOCUMENTATION_UTILISATEUR.md](DOCUMENTATION_UTILISATEUR.md)
 
 ## Securite (demo ou oral, 10 min)
 

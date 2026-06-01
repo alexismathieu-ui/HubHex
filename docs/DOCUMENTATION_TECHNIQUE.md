@@ -6,6 +6,7 @@ Monorepo avec deux applications :
 
 - **backend/** — API REST Express 5, port 4000
 - **frontend/** — Next.js App Router, TypeScript (`.ts`/`.tsx`), port 3000
+- Pages publiques : `/` (accueil), `/inscription` (creation de compte), `/connexion`.
 
 Le schema PostgreSQL est applique au demarrage du backend (`ensureDatabaseSchema` dans `backend/src/config/db.js`). Pas de migrations versionnees separees : le DDL est idempotent (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`).
 
