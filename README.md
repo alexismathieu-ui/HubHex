@@ -98,6 +98,7 @@ HubHex/
 - [Scenario de demo soutenance](docs/SCENARIO_DEMO.md)
 - [Support presentation](docs/SOUTENANCE.md)
 - [Checklist jour J soutenance](docs/CHECKLIST_JOUR_J.md)
+- [Reprise agent / micro-prompt](docs/AGENT_REPRISE.md)
 
 ## Livrables CDC
 

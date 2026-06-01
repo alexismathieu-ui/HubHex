@@ -1,14 +1,15 @@
 ================================================================================
 HUBHEX — ETAT DU PROJET (fait / reste a faire)
 ================================================================================
-Document mis a jour le 1 juin 2026 — pour reprise par un agent / developpeur.
+Document mis a jour le 1 juin 2026 (sync handoff agent) — pour reprise par un agent / developpeur.
 
 Ce fichier resume l'etat reel du depot apres les dernieres sessions (page accueil,
-inscription/connexion separees, fond techno souris, apercu Kanban landing, export BDD,
-logo tailles unifiees, editeur Monaco, partage API par lien, JWT + refresh token).
+inscription/connexion separees, fond techno souris + scroll, KanbanPreviewWindow anime,
+hovers landing, polices Space Grotesk / JetBrains Mono, export BDD, logo, docs jury,
+GitHub main a jour — commits 48ef746 + 3fae8d0).
 
 Progression globale estimee soutenance CDC : ~90–93 % fonctionnel ;
-livrables documentaires ~85 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
+livrables documentaires ~88–90 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
 
 ================================================================================
 0. RESUME POUR LE PROCHAIN AGENT (lecture rapide)
@@ -47,28 +48,46 @@ EXPORT BASE DE DONNEES
   - npm run db:dump    → database/hubhex_full_dump.sql (complet, gitignore)
   Script : backend/scripts/export-full-database.js
 
+TYPOGRAPHIE (pages publiques)
+  - Space Grotesk : --font-display (titres, UI) — frontend/src/app/layout.tsx
+  - JetBrains Mono : --font-mono (champs, snippets fond) — frontend/src/app/globals.css
+
 PAGES PUBLIQUES (accueil + auth)
-  - / : LandingPage (hero, fonctionnalites, CTA inscription/connexion)
+  - / : LandingPage (hero, fonctionnalites, CTA, hovers cartes/CTA/header)
         Redirection auto vers /tableau-de-bord si deja connecte
   - /inscription : formulaire inscription (AuthPageChrome), page dediee
-  - /connexion : login + lien vers inscription (pages separees, plus d'onglets communs)
-  - PublicPageShell : fond slate + CodeAnimatedBackground (spotlight souris ~340px)
-  - KanbanPreviewWindow : mini-fenetre Kanban animee sur l'accueil (rotation auto / pause au survol)
+  - /connexion : login + mot de passe oublie + lien inscription
+  - PublicPageShell : enveloppe accueil + auth
+  - CodeAnimatedBackground : fond slate-950 ; spotlight souris ~340px revele grille + code
+        qui defile ; pause si prefers-reduced-motion
+  - KanbanPreviewWindow : entree, float, cycle todo/in_progress/done, hovers, curseur clignotant
 
 LOGO / FAVICON
-  - frontend/public/logo.png
+  - frontend/public/logo.png (image utilisateur rognee, juin 2026)
   - frontend/src/app/icon.png, apple-icon.png (favicon Next.js)
-  - HubHexLogo.tsx : prop size en px (defaut 48) ; texte adaptatif (base / lg / xl selon size)
-  - Tailles en usage : 48px — accueil (header), AppNav, AuthPageChrome (/inscription, /connexion)
-  - Ancien favicon.ico Next.js supprime (evitait icone triangle)
+  - HubHexLogo.tsx : pictogramme size en px ; texte HubHex plus discret (text-sm a text-xl)
+  - Header public : logo 48px, min-h ~4rem, texte text-lg/xl selon page
+  - Accueil hero : fenetre Kanban separee du logo header
 
 EDITEUR MONACO (type VS Code)
   - Detection langage par extension/chemin : frontend/src/lib/depots/editorLanguage.ts
   - Chemin complet fichier dans onglet (buildFilePathForNode) pour .cs, .js, .tsx, etc.
   - tabSize selon langage ; format Shift+Alt+F ; MonacoEditorPane.tsx
 
+GIT (etat actuel — 1 juin 2026)
+  - Branche main, origin/main a jour (https://github.com/alexismathieu-ui/HubHex)
+  - 48ef746 : UI publique (landing, auth separee, fond, logo, a11y nav)
+  - 3fae8d0 : docs soutenance (plan, ORAL_GRILLE_B1, SCENARIO_DEMO, etat projet)
+  - Working tree propre apres 3fae8d0
+
+DOCS JURY (a lire pour reprise)
+  - docs/CHECKLIST_JOUR_J.md — checklist matin soutenance
+  - docs/AGENT_REPRISE.md — micro-prompt nouveau chat agent
+  - docs/ORAL_GRILLE_B1.md — reponses grille B1
+  - docs/SCENARIO_DEMO.md — demo chronometree + variante courte
+
 NE PAS FAIRE SANS DEMANDE EXPLICITE
-  - Commit / push git
+  - Commit / push git (depot deja synchronise ; re-commiter seulement si l'utilisateur le demande)
   - Reactiver un script automatique test:security (supprime)
   - Exposer le tunnel Cloudflare en permanence (risque securite)
 
@@ -86,7 +105,10 @@ FICHIERS CREES / MODIFIES RECEMMENT (session juin 2026)
   backend/src/routes/auth.routes.js (refresh/logout)
   frontend/src/components/layout/HubHexLogo.tsx (tailles parametriques)
   frontend/src/context/AuthContext.tsx (refresh)
-  docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md, CHECKLIST_JOUR_J.md
+  docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md
+  docs/CHECKLIST_JOUR_J.md, docs/ORAL_GRILLE_B1.md, docs/AGENT_REPRISE.md
+  HubHex_plan_complet.txt (cases [x] alignees code)
+  frontend/src/app/globals.css (keyframes hubhex-kanban-*, hubhex-techno-*)
   database/.gitignore (hubhex_full_dump.sql)
 
 ================================================================================
@@ -136,7 +158,7 @@ Depot GitHub : https://github.com/alexismathieu-ui/HubHex
 [x] cookie-parser pour refresh HttpOnly
 [~] Logs morgan — pas de winston/pino structure
 [ ] Hebergement cloud (optionnel)
-[~] Commit / push des derniers changements locaux si pas fait
+[x] Commit / push GitHub (main a jour — juin 2026)
 
 --------------------------------------------------------------------------------
 2.1 BASE DE DONNEES
@@ -207,10 +229,13 @@ Reste backend (non bloquant) :
 [x] Migration .ts / .tsx — strict: true, build OK
 [x] Page accueil / (LandingPage) ; /inscription et /connexion separees
 [x] PublicPageShell + CodeAnimatedBackground (effet techno au survol souris)
-[x] KanbanPreviewWindow sur l'accueil (apercu Kanban marketing)
+[x] KanbanPreviewWindow sur l'accueil (animation marketing + hovers)
+[x] Hovers dynamiques landing (cartes fonctionnalites, CTA, header, bloc differentiation)
 [x] Auth + refresh automatique (AuthContext.tsx, hubhex_refresh)
+[x] A11y : labels auth, focus-visible, aria-current AppNav
 [x] Profil, depots, Monaco, Kanban, communaute, graphe
-[x] Logo HubHex + favicon (HubHexLogo size=48 partout public/app ; favicon app/icon.png)
+[x] Logo HubHex + favicon (HubHexLogo ; header 48px + texte proportionnel)
+[x] Polices Space Grotesk + JetBrains Mono
 [x] Editeur : coloration syntaxique auto par extension (editorLanguage.ts)
 [x] Chemin fichier complet dans onglets editeur (buildFilePathForNode)
 [x] dompurify >= 3.4.0 (override monaco-editor)
@@ -238,11 +263,15 @@ Demo soutenance : docs/SCENARIO_DEMO.md — depart accueil / puis /inscription.
 [x] docs/DOCUMENTATION_UTILISATEUR.md
 [x] docs/CHECKLIST_DEMARRAGE_LOCAL.md
 [x] docs/SOUTENANCE.md
-[x] docs/SCENARIO_DEMO.md
-[x] database/hubhex_schema.sql
+[x] docs/SCENARIO_DEMO.md (durees + variante courte + refresh silencieux)
+[x] docs/CHECKLIST_JOUR_J.md
+[x] docs/ORAL_GRILLE_B1.md
+[x] docs/AGENT_REPRISE.md
+[x] HubHex_plan_complet.txt (aligne etat reel)
+[x] database/hubhex_schema.sql (refresh_tokens ; regen : npm run db:export)
 [ ] Captures d'ecran doc utilisateur (6 PNG manuels dans docs/assets/)
-[ ] Slides export PDF/PPT
-[ ] CDC PDF final (mentionner TS front + refresh token)
+[ ] Slides export PDF/PPT (depuis SOUTENANCE.md)
+[ ] CDC PDF final (optionnel — stack TS + refresh deja dans docs)
 
 ================================================================================
 3. CONFIGURATION .env BACKEND (rappel)
@@ -271,25 +300,28 @@ Pour audit cyber avec rate limits :
 4. CE QUI RESTE A FAIRE — PRIORISE
 ================================================================================
 
-PRIORITE HAUTE (avant jury)
-[ ] git commit / push si pas fait
-[ ] Parcours demo docs/SCENARIO_DEMO.md
-[ ] Tester lien tunnel une fois (npm run dev + npm run share)
-[ ] npm run db:dump pour livrable SQL avec donnees si demande
-[ ] Relire docs/SOUTENANCE.md → PDF/PPT
+PRIORITE HAUTE (jour J — surtout MANUEL utilisateur)
+[ ] Parcours demo une fois : docs/SCENARIO_DEMO.md
+[ ] 6 captures PNG dans docs/assets/ (voir docs/assets/README.md)
+[ ] Exporter docs/SOUTENANCE.md → PDF ou PowerPoint
+[ ] Tester tunnel : npm run dev + npm run share → /api/health → COUPER le tunnel apres
+[ ] Cocher tableau « Execution jury » dans docs/TESTS_SECURITE.md (apres tests reels)
+[ ] Option demo securite : ENABLE_RATE_LIMIT=true dans .env + test 429
+[~] npm run db:dump si le jury demande un SQL avec donnees (deja script OK)
 
-PRIORITE MOYENNE
-[ ] SMTP reel reset password
-[ ] Captures doc utilisateur
-[ ] CDC PDF a jour
-[ ] Moderation avancee (signalements)
+PRIORITE MOYENNE (oral / credibilite)
+[ ] SMTP reel (SMTP_*) ou expliquer mode dev reset MDP au jury
+[ ] 2–3 captures responsive mobile/tablette
+[ ] CDC PDF final aligne stack (optionnel)
 
-PRIORITE BASSE
+PRIORITE BASSE / POST-SOUTENANCE
 [ ] Migrations SQL versionnees
+[ ] Logs winston/pino (Morgan suffit pour oral — documente)
+[ ] Moderation signalements / roles admin
+[ ] Hebergement cloud stable (Render/Railway)
+[ ] Access JWT en cookie httpOnly (refresh deja HttpOnly cote API)
+[ ] Audit accessibilite WCAG complet
 [ ] Backend TypeScript
-[ ] Hebergement cloud stable (Render/Railway) au lieu du tunnel temporaire
-[ ] Access JWT en cookie httpOnly (refresh deja en cookie)
-[ ] Accessibilite WCAG
 
 ================================================================================
 5. ESTIMATION PAR BLOC (%)
@@ -306,7 +338,7 @@ PRIORITE BASSE
   Frontend TypeScript             ~95 %
   Backend API (JS)                ~93 %
   Pages publiques (accueil/auth)  ~95 %
-  Docs + guides prof/securite     ~85 %
+  Docs + guides prof/securite     ~88–90 %
 
 ================================================================================
 6. FICHIERS POINT D'ENTREE
@@ -329,6 +361,10 @@ PRIORITE BASSE
   Tunnel API            npm run share (backend/package.json)
   Tests securite (doc)  docs/TESTS_SECURITE.md
   Lien public prof      docs/GUIDE_LIEN_API.md
+  Checklist jour J      docs/CHECKLIST_JOUR_J.md
+  Grille oral B1        docs/ORAL_GRILLE_B1.md
+  Reprise agent         docs/AGENT_REPRISE.md
+  Animations CSS        frontend/src/app/globals.css
   Etat projet           HubHex_etat_projet.txt
 
 ================================================================================
@@ -351,12 +387,11 @@ Detail complet : docs/TESTS_SECURITE.md
 8. PROCHAINES ACTIONS SUGGEREES
 ================================================================================
 
-  1. cd backend && npm run dev  +  cd frontend && npm run dev
-  2. Verifier JWT_ACCESS_EXPIRES_IN et JWT_REFRESH_EXPIRES_DAYS dans backend/.env
-  3. Pour le prof : npm run share → envoyer URL /api/health + docs/GUIDE_LIEN_API.md
-  4. Tests securite manuels : docs/TESTS_SECURITE.md
-  5. git commit / push
-  6. Parcours demo SCENARIO_DEMO.md
+  1. Lire docs/CHECKLIST_JOUR_J.md et docs/AGENT_REPRISE.md (nouvel agent)
+  2. Executer le reste manuel : captures, export PDF slides, demo SCENARIO_DEMO.md
+  3. Tests securite : docs/TESTS_SECURITE.md (cocher dates apres execution)
+  4. Tunnel prof : npm run dev + npm run share → health → ne pas laisser ouvert
+  5. npm run db:dump uniquement si la BDD a change ou si le jury le demande
 
 ================================================================================
 FIN DU DOCUMENT
