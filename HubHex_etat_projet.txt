@@ -1,12 +1,11 @@
 ================================================================================
 HUBHEX — ETAT DU PROJET (fait / reste a faire)
 ================================================================================
-Document mis a jour le 1 juin 2026 (sync handoff agent) — pour reprise par un agent / developpeur.
+Document mis a jour le 5 juin 2026 (sync handoff agent) — pour reprise par un agent / developpeur.
 
-Ce fichier resume l'etat reel du depot apres les dernieres sessions (page accueil,
-inscription/connexion separees, fond techno souris + scroll, KanbanPreviewWindow anime,
-hovers landing, polices Space Grotesk / JetBrains Mono, export BDD, logo, docs jury,
-GitHub main a jour — commits 48ef746 + 3fae8d0).
+Ce fichier resume l'etat reel du depot apres les dernieres sessions (refonte UI espace
+connecte, theme personnalisable par utilisateur, pages publiques cyan fixe, modale theme,
+statut profil = 1 emoji, export BDD, docs jury, etc.).
 
 Progression globale estimee soutenance CDC : ~90–93 % fonctionnel ;
 livrables documentaires ~88–90 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
@@ -86,10 +85,37 @@ DOCS JURY (a lire pour reprise)
   - docs/ORAL_GRILLE_B1.md — reponses grille B1
   - docs/SCENARIO_DEMO.md — demo chronometree + variante courte
 
+THEME PERSONNALISE (espace connecte uniquement — juin 2026)
+  - Chaque utilisateur peut customiser 3 couleurs (localStorage, par compte) :
+      boutons | fond anime (grille, code, survol souris) | textes accent (HubHex, liens, labels)
+  - Acces : Mon profil → bouton « Personnaliser le theme » → modale (portal body, animee)
+  - IMPORTANT : pages publiques (/ /connexion /inscription) = cyan classique TOUJOURS
+  - Implementation :
+      ThemeContext (etat + localStorage, ne touche plus :root globalement)
+      AppShell (applyThemeToElement sur wrapper .hubhex-app-theme)
+      PublicThemeReset (reset :root cyan sur pages publiques + au mount)
+      Modale theme : applyThemeToElement sur le panneau (hors AppShell)
+  - Fichiers : frontend/src/lib/theme/theme.ts, context/ThemeContext.tsx,
+      components/theme/ThemeCustomizer.tsx, PublicThemeReset.tsx,
+      components/layout/AppShell.tsx, components/ui/* (AppCard, PageHeader, AppButton…)
+
+REFONTE UI ESPACE CONNECTE (juin 2026)
+  - Dashboard, depots, profil, communaute, graphe : design aligne landing (fond techno,
+    cartes glass, PageHeader, font-display)
+  - Profil : statut limite a UN seul emoji (plus de message texte ; status_message efface a la sauvegarde)
+  - Hydratation : StatCard utilise <div> pour la valeur (plus de <div> dans <p>)
+
+PROMPT UTILISATEUR POUR PROCHAIN AGENT (resume session UI juin 2026)
+  « Refaire le front partie utilisateur pour coller a l'accueil + theme customizable
+   (boutons / fond / textes separes). Modale centree large avec animations. Chaque user
+   a sa couleur dans l'espace connecte ; accueil/connexion/inscription restent cyan classique.
+   Statut profil = 1 emoji seulement. »
+
 NE PAS FAIRE SANS DEMANDE EXPLICITE
-  - Commit / push git (depot deja synchronise ; re-commiter seulement si l'utilisateur le demande)
+  - Commit / push git (re-commiter seulement si l'utilisateur le demande)
   - Reactiver un script automatique test:security (supprime)
   - Exposer le tunnel Cloudflare en permanence (risque securite)
+  - Appliquer le theme utilisateur sur document.documentElement (casserait les pages publiques)
 
 FICHIERS CREES / MODIFIES RECEMMENT (session juin 2026)
   frontend/src/app/page.tsx (accueil + redirect si auth)
@@ -108,7 +134,15 @@ FICHIERS CREES / MODIFIES RECEMMENT (session juin 2026)
   docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md
   docs/CHECKLIST_JOUR_J.md, docs/ORAL_GRILLE_B1.md, docs/AGENT_REPRISE.md
   HubHex_plan_complet.txt (cases [x] alignees code)
-  frontend/src/app/globals.css (keyframes hubhex-kanban-*, hubhex-techno-*)
+  frontend/src/app/globals.css (keyframes hubhex-kanban-*, hubhex-techno-*, hubhex-modal-*)
+  frontend/src/lib/theme/theme.ts, context/ThemeContext.tsx
+  frontend/src/components/theme/ThemeCustomizer.tsx, PublicThemeReset.tsx
+  frontend/src/components/layout/AppShell.tsx, AppNav.tsx
+  frontend/src/components/ui/AppCard.tsx, PageHeader.tsx, AppButton.tsx, StatCard.tsx
+  frontend/src/components/dashboard/DashboardPanel.tsx, profile/ProfilePanel.tsx
+  frontend/src/components/depots/DepotsList.tsx, DepotDetail.tsx
+  frontend/src/components/community/CommunityPanel.tsx, graph/HubHexGraphPanel.tsx
+  frontend/src/lib/auth/statusEmoji.ts (1 emoji statut)
   database/.gitignore (hubhex_full_dump.sql)
 
 ================================================================================
@@ -338,6 +372,7 @@ PRIORITE BASSE / POST-SOUTENANCE
   Frontend TypeScript             ~95 %
   Backend API (JS)                ~93 %
   Pages publiques (accueil/auth)  ~95 %
+  UI espace connecte + theme      ~92 %
   Docs + guides prof/securite     ~88–90 %
 
 ================================================================================
@@ -364,6 +399,9 @@ PRIORITE BASSE / POST-SOUTENANCE
   Checklist jour J      docs/CHECKLIST_JOUR_J.md
   Grille oral B1        docs/ORAL_GRILLE_B1.md
   Reprise agent         docs/AGENT_REPRISE.md
+  Theme utilisateur     frontend/src/lib/theme/theme.ts
+  Reset theme public    frontend/src/components/theme/PublicThemeReset.tsx
+  Modale theme          frontend/src/components/theme/ThemeCustomizer.tsx
   Animations CSS        frontend/src/app/globals.css
   Etat projet           HubHex_etat_projet.txt
 

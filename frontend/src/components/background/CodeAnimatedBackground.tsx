@@ -41,7 +41,7 @@ function CodeScrollColumn({
       {doubled.map((line, index) => (
         <span
           key={`${line}-${index}`}
-          className="whitespace-nowrap font-mono text-[11px] leading-tight text-cyan-300/50"
+          className="whitespace-nowrap font-mono text-[11px] leading-tight text-[color:var(--hubhex-bg-soft)] opacity-50"
         >
           {line}
         </span>
@@ -50,10 +50,15 @@ function CodeScrollColumn({
   );
 }
 
+interface CodeAnimatedBackgroundProps {
+  /** Variante plus discrete pour l'espace connecte */
+  subdued?: boolean;
+}
+
 /**
  * Fond slate par defaut ; au survol, zone illuminee avec grille + code qui defile.
  */
-export function CodeAnimatedBackground() {
+export function CodeAnimatedBackground({ subdued = false }: CodeAnimatedBackgroundProps) {
   const [spot, setSpot] = useState({ x: -9999, y: -9999 });
   const [visible, setVisible] = useState(false);
   const rafRef = useRef<number>(0);
@@ -118,11 +123,13 @@ export function CodeAnimatedBackground() {
     };
   }, []);
 
+  const radius = subdued ? SPOTLIGHT_RADIUS * 0.75 : SPOTLIGHT_RADIUS;
   const mask = visible
-    ? `radial-gradient(circle ${SPOTLIGHT_RADIUS}px at ${spot.x}px ${spot.y}px, black 0%, rgba(0,0,0,0.55) 55%, transparent 100%)`
+    ? `radial-gradient(circle ${radius}px at ${spot.x}px ${spot.y}px, black 0%, rgba(0,0,0,0.55) 55%, transparent 100%)`
     : "radial-gradient(circle 0px at 50% 50%, transparent, transparent)";
 
   const pausedClass = visible ? "" : "hubhex-techno-paused";
+  const layerOpacity = subdued ? 0.72 : 1;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
@@ -131,7 +138,7 @@ export function CodeAnimatedBackground() {
       <div
         className={`absolute inset-0 transition-opacity duration-300 ease-out ${pausedClass}`}
         style={{
-          opacity: visible ? 1 : 0,
+          opacity: visible ? layerOpacity : 0,
           WebkitMaskImage: mask,
           maskImage: mask,
         }}
@@ -140,21 +147,20 @@ export function CodeAnimatedBackground() {
           className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(ellipse 90% 70% at 50% 50%, rgba(34, 211, 238, 0.24) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 50% at 80% 20%, rgba(52, 211, 153, 0.2) 0%, transparent 50%),
-              radial-gradient(ellipse 50% 40% at 15% 85%, rgba(6, 182, 212, 0.16) 0%, transparent 45%),
+              radial-gradient(ellipse 90% 70% at 50% 50%, var(--hubhex-bg-glow-1) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 50% at 80% 20%, var(--hubhex-bg-glow-2) 0%, transparent 50%),
+              radial-gradient(ellipse 50% 40% at 15% 85%, var(--hubhex-bg-glow-3) 0%, transparent 45%),
               linear-gradient(180deg, #0f172a 0%, #020617 100%)
             `,
           }}
         />
 
-        {/* Grilles qui defilent */}
         <div
           className="hubhex-techno-grid-scroll absolute -inset-[88px] opacity-90"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(34, 211, 238, 0.4) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 211, 238, 0.4) 1px, transparent 1px)
+              linear-gradient(var(--hubhex-bg-grid) 1px, transparent 1px),
+              linear-gradient(90deg, var(--hubhex-bg-grid) 1px, transparent 1px)
             `,
             backgroundSize: "44px 44px",
           }}
@@ -163,14 +169,13 @@ export function CodeAnimatedBackground() {
           className="hubhex-techno-grid-fine-scroll absolute -inset-[44px] opacity-50 mix-blend-screen"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(52, 211, 153, 0.35) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(52, 211, 153, 0.35) 1px, transparent 1px)
+              linear-gradient(var(--hubhex-bg-grid-fine) 1px, transparent 1px),
+              linear-gradient(90deg, var(--hubhex-bg-grid-fine) 1px, transparent 1px)
             `,
             backgroundSize: "11px 11px",
           }}
         />
 
-        {/* Colonnes de code qui remontent */}
         <div className="absolute inset-0 overflow-hidden opacity-70">
           <div className="absolute -top-[10%] left-0 flex h-[220%] w-full justify-around gap-2 px-2">
             {columns.map((lines, index) => (
@@ -186,19 +191,30 @@ export function CodeAnimatedBackground() {
           </div>
         </div>
 
-        {/* Ligne de scan verticale */}
         <div className="absolute inset-0 overflow-hidden opacity-20">
-          <div className="hubhex-techno-scan-line absolute left-0 h-[40%] w-full bg-gradient-to-b from-transparent via-cyan-400/30 to-transparent" />
+          <div
+            className="hubhex-techno-scan-line absolute left-0 h-[40%] w-full"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, var(--hubhex-bg-scan), transparent)",
+            }}
+          />
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-cyan-950/25" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, rgb(2 6 23 / 0.4), transparent, var(--hubhex-bg-gradient-top))",
+          }}
+        />
       </div>
 
       <div
         className="absolute inset-0 transition-opacity duration-300"
         style={{
-          opacity: visible ? 0.85 : 0,
-          background: `radial-gradient(circle ${SPOTLIGHT_RADIUS * 0.65}px at ${spot.x}px ${spot.y}px, rgba(34, 211, 238, 0.14) 0%, transparent 70%)`,
+          opacity: visible ? (subdued ? 0.55 : 0.85) : 0,
+          background: `radial-gradient(circle ${radius * 0.65}px at ${spot.x}px ${spot.y}px, var(--hubhex-bg-spotlight) 0%, transparent 70%)`,
         }}
       />
     </div>

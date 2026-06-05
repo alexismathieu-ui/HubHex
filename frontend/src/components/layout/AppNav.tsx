@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { getDisplayName } from "../../lib/auth/userDisplay";
 import { UserAvatar } from "../profile/UserAvatar";
+import { AppButton } from "../ui/AppButton";
 import { HubHexLogo } from "./HubHexLogo";
 
 const NAV_ITEMS = [
@@ -27,11 +28,14 @@ export function AppNav() {
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-      <div className="mx-auto flex min-h-[4rem] max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-20 border-b border-slate-700/50 bg-slate-950/60 backdrop-blur-md">
+      <div className="mx-auto flex min-h-[4rem] max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <HubHexLogo href="/tableau-de-bord" size={48} className="shrink-0" />
-          <nav className="flex flex-wrap gap-1">
+          <nav
+            className="flex flex-wrap items-center gap-1 text-sm font-display"
+            aria-label="Navigation principale"
+          >
             {NAV_ITEMS.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -40,10 +44,10 @@ export function AppNav() {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-md px-3 py-1.5 text-sm transition focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+                  className={`rounded-md px-3 py-1.5 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[color:var(--hubhex-accent)] ${
                     active
-                      ? "bg-cyan-950/60 font-medium text-cyan-200"
-                      : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                      ? "bg-[color:var(--hubhex-accent-muted)] font-medium text-accent"
+                      : "text-slate-400 hover:-translate-y-0.5 hover:bg-slate-900/80 hover:text-slate-200"
                   }`}
                 >
                   {item.label}
@@ -57,23 +61,21 @@ export function AppNav() {
             <>
               <Link
                 href="/profil"
-                className="hidden items-center gap-2 rounded-md px-2 py-1 text-slate-400 hover:bg-slate-900 hover:text-violet-200 sm:inline-flex"
+                className="hidden items-center gap-2 rounded-md px-2 py-1 text-slate-400 transition-all duration-300 hover:bg-slate-900/80 hover:text-accent sm:inline-flex"
               >
                 <UserAvatar user={currentUser} size="sm" />
-                <span className="max-w-[140px] truncate">{getDisplayName(currentUser)}</span>
+                <span className="max-w-[140px] truncate font-display">
+                  {getDisplayName(currentUser)}
+                </span>
               </Link>
-              <button
-                type="button"
-                onClick={onLogout}
-                className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-300 hover:border-slate-500"
-              >
+              <AppButton variant="ghost" onClick={onLogout} className="px-3 py-1.5">
                 Deconnexion
-              </button>
+              </AppButton>
             </>
           ) : (
             <Link
               href="/connexion"
-              className="rounded-md bg-cyan-600 px-3 py-1.5 font-medium text-white hover:bg-cyan-500"
+              className="rounded-lg bg-accent px-3 py-1.5 font-display font-semibold text-[color:var(--hubhex-accent-on)] hover:bg-[color:var(--hubhex-accent-hover)]"
             >
               Connexion
             </Link>

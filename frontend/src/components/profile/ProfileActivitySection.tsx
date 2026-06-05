@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import type { DashboardActivity } from "../../types/hubhex";
+import { AppCard } from "../ui/AppCard";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   project: "Projet",
@@ -33,8 +34,8 @@ export function ProfileActivitySection({ activity }: ProfileActivitySectionProps
   const items = activity || [];
 
   return (
-    <section className="rounded-xl border border-violet-800/60 bg-violet-950/30 p-5">
-      <h2 className="text-lg font-semibold text-violet-200">Activite recente</h2>
+    <AppCard>
+      <h2 className="font-display text-lg font-semibold text-slate-100">Activite recente</h2>
       <p className="mt-1 text-sm text-slate-400">
         Dernieres actions sur tes depots, taches et commentaires recus.
       </p>
@@ -48,7 +49,7 @@ export function ProfileActivitySection({ activity }: ProfileActivitySectionProps
               key={`${item.type}-${item.entity_id}-${item.occurred_at}`}
               className="rounded-md border border-slate-800 bg-slate-950/70 px-3 py-2"
             >
-              <p className="text-xs font-medium text-violet-300/90">
+              <p className="text-xs font-medium text-accent">
                 {ACTIVITY_LABELS[item.type] || item.type} ·{" "}
                 {ACTION_LABELS[item.action] || item.action}
               </p>
@@ -58,7 +59,7 @@ export function ProfileActivitySection({ activity }: ProfileActivitySectionProps
                 {item.project_id ? (
                   <Link
                     href={`/depots/${item.project_id}`}
-                    className="text-violet-400 hover:text-violet-300"
+                    className="text-accent hover:text-accent-soft"
                   >
                     Voir le depot
                   </Link>
@@ -68,6 +69,6 @@ export function ProfileActivitySection({ activity }: ProfileActivitySectionProps
           ))}
         </ul>
       )}
-    </section>
+    </AppCard>
   );
 }

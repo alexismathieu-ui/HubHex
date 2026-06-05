@@ -18,7 +18,11 @@ Contexte rapide :
 - Pages publiques OK : / accueil, /inscription, /connexion
 - Fond techno au survol souris (CodeAnimatedBackground) + KanbanPreviewWindow anime sur l'accueil
 - Auth : JWT access 15 min + refresh 7 j (rotation, cookie HttpOnly API)
-- GitHub main a jour (commits 48ef746 UI, 3fae8d0 docs) — ne pas commit/push sans demande explicite
+- UI espace connecte refaite (dashboard, depots, profil…) alignee landing
+- Theme personnalise : 3 couleurs (boutons / fond / textes) — localStorage par user
+  → UNIQUEMENT dans (app) via AppShell ; pages publiques = cyan fixe (PublicThemeReset)
+- Profil : modale « Personnaliser le theme » ; statut = 1 emoji max
+- Ne pas commit/push sans demande explicite
 
 Priorites restantes (MANUEL utilisateur) :
 - 6 captures PNG → docs/assets/ + doc utilisateur
@@ -75,5 +79,6 @@ cd c:\Users\User\HubHex\frontend; npm run dev
 ## Si l'utilisateur demande du code
 
 - Respecter les conventions existantes (Tailwind slate/cyan, composants dans `frontend/src/components/`)
+- Theme user : applyThemeToElement sur AppShell uniquement — jamais :root global hors reset public
 - Ne pas refondre auth/tunnel sans demande
 - Build : `cd frontend; npm run build` avant de valider le front

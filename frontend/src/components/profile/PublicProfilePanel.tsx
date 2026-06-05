@@ -54,10 +54,9 @@ export function PublicProfilePanel({ username }: PublicProfilePanelProps) {
         <div>
           <h1 className="text-2xl font-bold text-slate-100">{getDisplayName(profile)}</h1>
           <p className="font-mono text-sm text-cyan-400">@{profile.username}</p>
-          {profile.status_message ? (
-            <p className="mt-2 text-sm text-slate-400">
-              {profile.status_emoji ? `${profile.status_emoji} ` : ""}
-              {profile.status_message}
+          {profile.status_emoji ? (
+            <p className="mt-2 text-2xl leading-none" aria-label="Emoji de statut">
+              {profile.status_emoji}
             </p>
           ) : null}
         </div>

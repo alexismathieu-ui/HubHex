@@ -17,6 +17,8 @@ import { ProjectJournalPanel } from "./ProjectJournalPanel";
 import { ProjectNotesPanel } from "./ProjectNotesPanel";
 import { ProjectStackPanel } from "./ProjectStackPanel";
 import { TasksBoard } from "./TasksBoard";
+import { AppButton } from "../ui/AppButton";
+import { AppCard } from "../ui/AppCard";
 import { TechTagPicker } from "./TechTagPicker";
 
 const TABS = [
@@ -155,26 +157,26 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
 
   if (!project) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-8 text-center">
+      <AppCard className="p-8 text-center">
         <p className="text-slate-400">{message || "Depot introuvable."}</p>
-        <Link href="/depots" className="mt-4 inline-block text-sm text-cyan-400 hover:text-cyan-300">
+        <Link href="/depots" className="mt-4 inline-block text-sm text-accent hover:text-accent-soft">
           Retour aux depots
         </Link>
-      </div>
+      </AppCard>
     );
   }
 
   const path = depotPath(username, project.slug);
 
   return (
-    <div>
-      <Link href="/depots" className="text-sm text-slate-500 hover:text-cyan-400">
+    <div className="flex flex-col gap-6">
+      <Link href="/depots" className="text-sm text-slate-500 transition-colors hover:text-accent">
         ← Mes depots
       </Link>
 
-      <header className="mt-4 border-b border-slate-800 pb-4">
-        <p className="font-mono text-sm text-cyan-300">{path}</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-100">{project.title}</h1>
+      <AppCard highlight>
+        <p className="font-mono text-sm text-accent">{path}</p>
+        <h1 className="font-display mt-1 text-3xl font-bold text-slate-50">{project.title}</h1>
         <p className="mt-2 text-sm text-slate-400">{project.description}</p>
         {technologiesFromProject(project).length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-1.5">
@@ -188,47 +190,39 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
             ))}
           </div>
         ) : null}
-      </header>
+      </AppCard>
 
-      {message ? <p className="mt-3 text-sm text-slate-300">{message}</p> : null}
+      {message ? <p className="text-sm text-slate-300">{message}</p> : null}
 
-      <div className="mt-6 flex flex-wrap gap-2 border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap gap-2 border-b border-slate-700/50 pb-2">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`rounded-md px-3 py-1.5 text-sm ${
+            className={`rounded-md px-3 py-1.5 text-sm font-display transition-all duration-300 ${
               activeTab === tab.id
-                ? "bg-cyan-600 font-medium text-white"
-                : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                ? "bg-[color:var(--hubhex-accent-muted)] font-medium text-accent"
+                : "text-slate-400 hover:bg-slate-900/80 hover:text-slate-200"
             }`}
           >
             {tab.label}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={startEdit}
-          className="ml-auto rounded-md border border-slate-600 px-3 py-1.5 text-sm text-slate-300 hover:border-slate-400"
-        >
+        <AppButton type="button" variant="ghost" onClick={startEdit} className="ml-auto px-3 py-1.5">
           Modifier
-        </button>
-        <button
-          type="button"
-          onClick={() => setPendingDelete(true)}
-          className="rounded-md border border-red-900/60 px-3 py-1.5 text-sm text-red-300 hover:border-red-700"
-        >
+        </AppButton>
+        <AppButton type="button" variant="danger" onClick={() => setPendingDelete(true)} className="px-3 py-1.5">
           Supprimer
-        </button>
+        </AppButton>
       </div>
 
-      <div className="mt-6">
+      <div>
         {activeTab === "fichiers" ? (
-          <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/50 p-2 sm:p-4">
+          <AppCard className="overflow-hidden p-2 sm:p-4">
             <p className="mb-2 px-2 font-mono text-xs text-slate-600">hubhex://{path}</p>
             <DepotFileExplorer token={token} projectId={project.id} />
-          </section>
+          </AppCard>
         ) : null}
 
         {activeTab === "kanban" ? (
@@ -238,44 +232,45 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
         ) : null}
 
         {activeTab === "stack" ? (
-          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+          <AppCard>
             <ProjectStackPanel token={token} projectId={project.id} />
-          </section>
+          </AppCard>
         ) : null}
 
         {activeTab === "journal" ? (
-          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+          <AppCard>
             <ProjectJournalPanel token={token} projectId={project.id} />
-          </section>
+          </AppCard>
         ) : null}
 
         {activeTab === "notes" ? (
-          <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+          <AppCard>
             <ProjectNotesPanel token={token} projectId={project.id} />
-          </section>
+          </AppCard>
         ) : null}
 
         {activeTab === "parametres" && editing && editForm ? (
+          <AppCard highlight>
           <form
-            className="flex max-w-xl flex-col gap-3 rounded-xl border border-amber-900/40 bg-slate-900/60 p-4"
+            className="flex max-w-xl flex-col gap-3"
             onSubmit={onEditSubmit}
           >
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-300">
+            <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-accent">
               Parametres du depot
             </h2>
             <input
-              className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+              className="hubhex-input"
               value={editForm.title}
               onChange={(event) => setEditForm({ ...editForm, title: event.target.value })}
               required
             />
             <input
-              className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm"
+              className="hubhex-input font-mono text-sm"
               value={editForm.slug}
               onChange={(event) => setEditForm({ ...editForm, slug: event.target.value })}
             />
             <textarea
-              className="min-h-[88px] rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+              className="hubhex-input min-h-[88px]"
               value={editForm.description}
               onChange={(event) =>
                 setEditForm({ ...editForm, description: event.target.value })
@@ -287,7 +282,7 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
               onChange={(tags: string[]) => setEditForm({ ...editForm, selectedTechnologies: tags })}
             />
             <select
-              className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+              className="hubhex-input"
               value={editForm.visibility}
               onChange={(event) =>
                 setEditForm({
@@ -300,24 +295,22 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
               <option value="public">Public</option>
             </select>
             <div className="flex gap-2">
-              <button
-                type="submit"
-                className="rounded-lg bg-amber-400 px-4 py-2 font-semibold text-slate-950"
-              >
+              <AppButton type="submit" variant="primary">
                 Enregistrer
-              </button>
-              <button
+              </AppButton>
+              <AppButton
                 type="button"
-                className="rounded-lg border border-slate-600 px-4 py-2 text-slate-200"
+                variant="ghost"
                 onClick={() => {
                   setEditing(false);
                   setEditForm(null);
                 }}
               >
                 Annuler
-              </button>
+              </AppButton>
             </div>
           </form>
+          </AppCard>
         ) : activeTab === "parametres" ? (
           <p className="text-sm text-slate-500">
             Clique sur « Modifier » pour changer le titre, l&apos;identifiant ou la visibilite.

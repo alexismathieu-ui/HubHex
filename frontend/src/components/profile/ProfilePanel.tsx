@@ -9,6 +9,7 @@ import { getDisplayName, getStatusLabel } from "../../lib/auth/userDisplay";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { REFRESH_TOKEN_KEY, TOKEN_KEY } from "../../lib/auth/constants";
 import { translateProfileApiMessage } from "../../lib/auth/profileErrorMessages";
+import { EMOJI_PRESETS, normalizeStatusEmoji } from "../../lib/auth/statusEmoji";
 import { buildProfilePatchBody } from "../../lib/auth/profileValidation";
 import { createAuthHeaders } from "../../lib/apiHeaders";
 import { getErrorMessage } from "../../lib/errors";
@@ -20,18 +21,13 @@ import type {
   ProfileMessageTone,
 } from "../../types/profile";
 import type { ProfileUser } from "../../types/hubhex";
+import { ThemeCustomizerTrigger } from "../theme/ThemeCustomizer";
+import { AppButton } from "../ui/AppButton";
+import { AppCard } from "../ui/AppCard";
+import { StatCard } from "../ui/StatCard";
 import { DeleteAccountSection } from "./DeleteAccountSection";
 import { ProfileActivitySection } from "./ProfileActivitySection";
 import { UserAvatar } from "./UserAvatar";
-
-const STATUS_PRESETS = [
-  { emoji: "🟢", message: "En ligne" },
-  { emoji: "🟡", message: "Absent" },
-  { emoji: "🔴", message: "Occupe" },
-  { emoji: "💤", message: "Ne pas deranger" },
-  { emoji: "🚀", message: "En train de coder" },
-  { emoji: "📚", message: "En formation" },
-];
 
 function formatDate(iso: string | undefined): string {
   if (!iso) {
@@ -52,8 +48,7 @@ function FieldLabel({ children, hint }: FieldLabelProps) {
   );
 }
 
-const inputClassName =
-  "rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-600";
+const inputClassName = "hubhex-input";
 
 const emptyForm = (): ProfileFormState => ({
   username: "",
@@ -172,11 +167,11 @@ export function ProfilePanel() {
     setAvatarPreview(null);
   };
 
-  const applyStatusPreset = (preset: { emoji: string; message: string }) => {
+  const applyStatusEmoji = (emoji: string) => {
     setForm((prev) => ({
       ...prev,
-      status_emoji: preset.emoji,
-      status_message: preset.message,
+      status_emoji: emoji,
+      status_message: "",
     }));
   };
 
@@ -235,19 +230,24 @@ export function ProfilePanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="rounded-xl border border-violet-800/60 bg-violet-950/30 p-5">
+      <AppCard highlight>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex gap-4">
             <UserAvatar user={previewUser} size="xl" previewSrc={avatarPreview} />
             <div>
-              <h1 className="text-2xl font-semibold text-violet-200">
+              <p className="font-mono text-sm font-medium uppercase tracking-wider text-accent">
+                // mon profil
+              </p>
+              <h1 className="font-display text-3xl font-bold text-slate-50">
                 {getDisplayName(previewUser)}
               </h1>
-              <p className="mt-0.5 font-mono text-sm text-violet-300/90">@{profile.username}</p>
+              <p className="mt-0.5 font-mono text-sm text-accent-soft">@{profile.username}</p>
               {statusPreview ? (
-                <p className="mt-2 text-sm text-slate-300">{statusPreview}</p>
+                <p className="mt-2 text-2xl leading-none" aria-label="Emoji de statut">
+                  {statusPreview}
+                </p>
               ) : (
-                <p className="mt-2 text-sm text-slate-500">Aucun statut defini</p>
+                <p className="mt-2 text-sm text-slate-500">Aucun emoji de statut</p>
               )}
               <p className="mt-2 text-xs text-slate-500">
                 Membre depuis le {formatDate(profile.created_at)}
@@ -255,57 +255,54 @@ export function ProfilePanel() {
                   ? ` · profil mis a jour le ${formatDate(profile.profile_updated_at)}`
                   : ""}
               </p>
-              <p className="mt-1 text-xs text-violet-400/80">
+              <p className="mt-1 text-xs text-slate-500">
                 Chemin depots :{" "}
-                <span className="font-mono text-violet-200">{profile.username}/slug</span>
+                <span className="font-mono text-accent">{profile.username}/slug</span>
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="self-start rounded-lg border border-violet-700 px-3 py-1.5 text-sm text-violet-100 hover:border-violet-500"
-            onClick={() => loadProfile()}
-            disabled={loading}
-          >
-            {loading ? "Actualisation..." : "Actualiser"}
-          </button>
+          <div className="flex flex-wrap gap-2 self-start">
+            <ThemeCustomizerTrigger />
+            <AppButton
+              type="button"
+              variant="ghost"
+              onClick={() => loadProfile()}
+              disabled={loading}
+            >
+              {loading ? "Actualisation..." : "Actualiser"}
+            </AppButton>
+          </div>
         </div>
 
         {stats ? (
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Depots</p>
-              <p className="mt-1 text-2xl font-bold text-slate-100">{stats.projects.total}</p>
-              <p className="mt-1 text-xs text-slate-400">
-                {stats.projects.public} public · {stats.projects.private} prive
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Taches</p>
-              <p className="mt-1 text-2xl font-bold text-cyan-200">{stats.tasks.total}</p>
-            </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Commentaires</p>
-              <p className="mt-1 text-2xl font-bold text-amber-200">{stats.comments.total}</p>
-            </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Raccourcis</p>
-              <div className="mt-2 flex flex-col gap-1 text-sm">
-                <Link href="/depots" className="text-violet-300 hover:text-violet-200">
-                  Mes depots
-                </Link>
-                <Link href="/tableau-de-bord" className="text-violet-300 hover:text-violet-200">
-                  Tableau de bord
-                </Link>
-              </div>
-            </div>
+            <StatCard
+              label="Depots"
+              value={stats.projects.total}
+              hint={`${stats.projects.public} public · ${stats.projects.private} prive`}
+            />
+            <StatCard label="Taches" value={stats.tasks.total} accent />
+            <StatCard label="Commentaires" value={stats.comments.total} />
+            <StatCard
+              label="Raccourcis"
+              value={
+                <div className="mt-1 flex flex-col gap-1 text-sm font-normal">
+                  <Link href="/depots" className="text-accent hover:text-accent-soft">
+                    Mes depots
+                  </Link>
+                  <Link href="/tableau-de-bord" className="text-accent hover:text-accent-soft">
+                    Tableau de bord
+                  </Link>
+                </div>
+              }
+            />
           </div>
         ) : null}
-      </header>
+      </AppCard>
 
       <form className="flex flex-col gap-6" onSubmit={onSubmit}>
-        <section className="rounded-xl border border-violet-800/60 bg-violet-950/30 p-5">
-          <h2 className="text-lg font-semibold text-violet-200">Personnalisation</h2>
+        <AppCard>
+          <h2 className="font-display text-lg font-semibold text-slate-100">Personnalisation</h2>
           <p className="mt-1 text-sm text-slate-400">
             Pseudo affiche, photo de profil et statut visible dans la navigation et la communaute.
           </p>
@@ -318,21 +315,13 @@ export function ProfilePanel() {
               className="hidden"
               onChange={onAvatarPick}
             />
-            <button
-              type="button"
-              className="rounded-lg border border-violet-700 px-4 py-2 text-sm text-violet-100 hover:border-violet-500"
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <AppButton type="button" variant="secondary" onClick={() => fileInputRef.current?.click()}>
               Changer la photo
-            </button>
+            </AppButton>
             {(profile.has_avatar || avatarPreview) && !form.clearAvatar ? (
-              <button
-                type="button"
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
-                onClick={onRemoveAvatar}
-              >
+              <AppButton type="button" variant="ghost" onClick={onRemoveAvatar}>
                 Supprimer la photo
-              </button>
+              </AppButton>
             ) : null}
             <span className="text-xs text-slate-500">JPEG, PNG, WebP ou GIF — max 2 Mo</span>
           </div>
@@ -348,49 +337,58 @@ export function ProfilePanel() {
                 maxLength={80}
               />
             </FieldLabel>
-            <FieldLabel hint="Emoji court (optionnel)">
+            <FieldLabel hint="Un seul emoji affiche sur ton profil et dans la communaute">
               Emoji de statut
               <input
-                className={inputClassName}
-                placeholder="Ex. 🚀"
+                className={`${inputClassName} text-center text-2xl`}
+                placeholder="🚀"
                 value={form.status_emoji}
-                onChange={(event) => setForm({ ...form, status_emoji: event.target.value })}
-                maxLength={12}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    status_emoji: normalizeStatusEmoji(event.target.value),
+                    status_message: "",
+                  })
+                }
+                maxLength={8}
+                inputMode="text"
               />
             </FieldLabel>
-            <div className="md:col-span-2">
-              <FieldLabel hint="Message visible sur ton profil">
-                Statut
-                <input
-                  className={inputClassName}
-                  placeholder="Ex. En train de coder mon depot HubHex"
-                  value={form.status_message}
-                  onChange={(event) => setForm({ ...form, status_message: event.target.value })}
-                  maxLength={120}
-                />
-              </FieldLabel>
-            </div>
           </div>
 
           <div className="mt-3">
             <p className="text-xs text-slate-500">Suggestions rapides</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {STATUS_PRESETS.map((preset) => (
+              {EMOJI_PRESETS.map((emoji) => (
                 <button
-                  key={preset.emoji}
+                  key={emoji}
                   type="button"
-                  className="rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1 text-xs text-slate-300 hover:border-violet-600 hover:text-violet-200"
-                  onClick={() => applyStatusPreset(preset)}
+                  aria-label={`Emoji ${emoji}`}
+                  className={`rounded-full border px-3 py-1.5 text-lg transition-colors ${
+                    form.status_emoji === emoji
+                      ? "border-[color:var(--hubhex-accent-border)] bg-[color:var(--hubhex-accent-muted)]"
+                      : "border-slate-700 bg-slate-950/80 hover:border-[color:var(--hubhex-accent-border)]"
+                  }`}
+                  onClick={() => applyStatusEmoji(emoji)}
                 >
-                  {preset.emoji} {preset.message}
+                  {emoji}
                 </button>
               ))}
+              {form.status_emoji ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-500"
+                  onClick={() => applyStatusEmoji("")}
+                >
+                  Retirer
+                </button>
+              ) : null}
             </div>
           </div>
-        </section>
+        </AppCard>
 
-        <section className="rounded-xl border border-violet-800/60 bg-violet-950/30 p-5">
-          <h2 className="text-lg font-semibold text-violet-200">Identite du compte</h2>
+        <AppCard>
+          <h2 className="font-display text-lg font-semibold text-slate-100">Identite du compte</h2>
           <p className="mt-1 text-sm text-slate-400">
             Le nom d&apos;utilisateur (@) sert aux URLs des depots. L&apos;email sert a la connexion.
           </p>
@@ -428,10 +426,10 @@ export function ProfilePanel() {
               />
             </FieldLabel>
           </div>
-        </section>
+        </AppCard>
 
-        <section className="rounded-xl border border-violet-800/60 bg-violet-950/30 p-5">
-          <h2 className="text-lg font-semibold text-violet-200">Securite</h2>
+        <AppCard>
+          <h2 className="font-display text-lg font-semibold text-slate-100">Securite</h2>
           <p className="mt-1 text-sm text-slate-400">
             Mot de passe : 8 caracteres minimum, au moins une lettre et un chiffre.
           </p>
@@ -467,16 +465,12 @@ export function ProfilePanel() {
               />
             </FieldLabel>
           </div>
-        </section>
+        </AppCard>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
-            className="rounded-lg bg-violet-500 px-4 py-2 font-semibold text-white hover:bg-violet-400 disabled:opacity-60"
-            type="submit"
-            disabled={saving}
-          >
+          <AppButton type="submit" variant="primary" disabled={saving}>
             {saving ? "Enregistrement..." : "Enregistrer les modifications"}
-          </button>
+          </AppButton>
           <p
             className={`text-sm ${
               messageTone === "success"

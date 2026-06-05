@@ -3,6 +3,32 @@
 :root {
   --background: #020617;
   --foreground: #f1f5f9;
+  --hubhex-accent: #06b6d4;
+  --hubhex-accent-hover: #22d3ee;
+  --hubhex-accent-text: #a5f3fc;
+  --hubhex-accent-soft: #67e8f9;
+  --hubhex-accent-border: rgba(6, 182, 212, 0.45);
+  --hubhex-accent-muted: rgba(6, 182, 212, 0.14);
+  --hubhex-accent-glow: rgba(6, 182, 212, 0.28);
+  --hubhex-accent-on: #020617;
+  --hubhex-bg: #06b6d4;
+  --hubhex-bg-hover: #22d3ee;
+  --hubhex-bg-text: #a5f3fc;
+  --hubhex-bg-soft: #67e8f9;
+  --hubhex-bg-border: rgba(6, 182, 212, 0.45);
+  --hubhex-bg-muted: rgba(6, 182, 212, 0.14);
+  --hubhex-bg-glow: rgba(6, 182, 212, 0.28);
+  --hubhex-bg-on: #020617;
+  --hubhex-bg-grid: rgba(6, 182, 212, 0.4);
+  --hubhex-bg-grid-fine: rgba(52, 211, 153, 0.35);
+  --hubhex-bg-glow-1: rgba(6, 182, 212, 0.24);
+  --hubhex-bg-glow-2: rgba(52, 211, 153, 0.2);
+  --hubhex-bg-glow-3: rgba(6, 182, 212, 0.16);
+  --hubhex-bg-scan: rgba(6, 182, 212, 0.3);
+  --hubhex-bg-gradient-top: rgba(6, 182, 212, 0.25);
+  --hubhex-bg-spotlight: rgba(6, 182, 212, 0.14);
+  --hubhex-logo-text: #67e8f9;
+  --hubhex-logo-glow: rgba(103, 232, 249, 0.18);
 }
 
 @theme inline {
@@ -31,8 +57,52 @@ pre,
 }
 
 :focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid var(--hubhex-accent);
   outline-offset: 2px;
+}
+
+.text-accent {
+  color: var(--hubhex-accent-text);
+}
+
+.text-accent-soft {
+  color: var(--hubhex-accent-soft);
+}
+
+.bg-accent {
+  background-color: var(--hubhex-accent);
+}
+
+.bg-accent-muted {
+  background-color: var(--hubhex-accent-muted);
+}
+
+.border-accent {
+  border-color: var(--hubhex-accent-border);
+}
+
+.ring-accent {
+  --tw-ring-color: var(--hubhex-accent);
+}
+
+.hubhex-input {
+  border-radius: 0.5rem;
+  border: 1px solid rgb(51 65 85 / 0.8);
+  background-color: rgb(2 6 23 / 0.7);
+  padding: 0.625rem 0.75rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #f1f5f9;
+}
+
+.hubhex-input::placeholder {
+  color: #475569;
+}
+
+.hubhex-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--hubhex-accent);
 }
 
 /* Fond techno — defilement visible dans la zone illuminee */
@@ -155,6 +225,72 @@ pre,
 
 @media (prefers-reduced-motion: reduce) {
   .hubhex-kanban-float {
+    animation: none;
+  }
+}
+
+/* Modale personnalisation theme */
+@keyframes hubhex-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hubhex-modal-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes hubhex-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes hubhex-modal-panel-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.97);
+  }
+}
+
+.hubhex-modal-backdrop {
+  animation: hubhex-modal-backdrop-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hubhex-modal-backdrop--closing {
+  animation: hubhex-modal-backdrop-out 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.hubhex-modal-panel {
+  animation: hubhex-modal-panel-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hubhex-modal-panel--closing {
+  animation: hubhex-modal-panel-out 0.24s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hubhex-modal-backdrop,
+  .hubhex-modal-backdrop--closing,
+  .hubhex-modal-panel,
+  .hubhex-modal-panel--closing {
     animation: none;
   }
 }

@@ -36,13 +36,14 @@ export function HubHexLogo({
           alt=""
           width={size}
           height={size}
-          className="block h-full w-full object-contain object-center drop-shadow-[0_0_10px_rgba(34,211,238,0.18)]"
+          className="block h-full w-full object-contain object-center"
+          style={{ filter: "drop-shadow(0 0 10px var(--hubhex-logo-glow))" }}
           decoding="async"
         />
       </span>
       {showText ? (
         <span
-          className={`self-center font-display font-semibold leading-none tracking-wide text-cyan-300/95 ${textClassForSize(size)}`}
+          className={`self-center font-display font-semibold leading-none tracking-wide text-accent ${textClassForSize(size)}`}
         >
           HubHex
         </span>

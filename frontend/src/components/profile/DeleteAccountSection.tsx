@@ -9,6 +9,8 @@ import { createAuthHeaders } from "../../lib/apiHeaders";
 import { translateProfileApiMessage } from "../../lib/auth/profileErrorMessages";
 import { getErrorMessage } from "../../lib/errors";
 import { formatApiError } from "../../lib/formatApiError";
+import { AppButton } from "../ui/AppButton";
+import { AppCard } from "../ui/AppCard";
 
 const CONFIRMATION_TEXT = "SUPPRIMER";
 
@@ -64,7 +66,7 @@ export function DeleteAccountSection() {
   };
 
   return (
-    <section className="rounded-xl border border-rose-900/50 bg-rose-950/20 p-5">
+    <AppCard className="border-rose-900/50 bg-rose-950/20">
       <h2 className="text-lg font-semibold text-rose-200">Zone de danger</h2>
       <p className="mt-1 text-sm text-rose-300/80">
         La suppression efface definitivement ton compte, tous tes depots, fichiers, taches et
@@ -126,6 +128,6 @@ export function DeleteAccountSection() {
           <p className="text-sm text-rose-200/90">{message}</p>
         </form>
       )}
-    </section>
+    </AppCard>
   );
 }

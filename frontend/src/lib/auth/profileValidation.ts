@@ -1,4 +1,5 @@
 import type { ProfileFormState, ProfilePatchBody, ProfilePatchResult, User } from "../../types/profile";
+import { normalizeStatusEmoji } from "./statusEmoji";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
@@ -45,8 +46,9 @@ export function validateStatusMessage(message: string): string | null {
 }
 
 export function validateStatusEmoji(emoji: string): string | null {
-  if (emoji.length > 12) {
-    return "Emoji de statut trop long.";
+  const normalized = normalizeStatusEmoji(emoji);
+  if (normalized.length > 12) {
+    return "Emoji de statut invalide.";
   }
   return null;
 }
@@ -138,25 +140,15 @@ export function buildProfilePatchBody(
     }
   }
 
-  const trimmedStatusMessage = form.status_message.trim();
-  const currentStatusMessage = (currentUser.status_message || "").trim();
-  if (trimmedStatusMessage !== currentStatusMessage) {
-    const statusError = validateStatusMessage(trimmedStatusMessage);
-    if (statusError) {
-      errors.push(statusError);
-    } else {
-      body.status_message = trimmedStatusMessage || null;
-    }
-  }
-
-  const trimmedStatusEmoji = form.status_emoji.trim();
-  const currentStatusEmoji = (currentUser.status_emoji || "").trim();
+  const trimmedStatusEmoji = normalizeStatusEmoji(form.status_emoji);
+  const currentStatusEmoji = normalizeStatusEmoji(currentUser.status_emoji || "");
   if (trimmedStatusEmoji !== currentStatusEmoji) {
     const emojiError = validateStatusEmoji(trimmedStatusEmoji);
     if (emojiError) {
       errors.push(emojiError);
     } else {
       body.status_emoji = trimmedStatusEmoji || null;
+      body.status_message = null;
     }
   }
 

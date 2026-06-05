@@ -31,10 +31,5 @@ export function getStatusLabel(user: Partial<User> | null | undefined): string {
   if (!user) {
     return "";
   }
-  const emoji = user.status_emoji?.trim() || "";
-  const message = user.status_message?.trim() || "";
-  if (emoji && message) {
-    return `${emoji} ${message}`;
-  }
-  return emoji || message;
+  return user.status_emoji?.trim() || "";
 }
