@@ -19,6 +19,11 @@ describe("auth helpers", () => {
     assert.equal(result.success, false);
   });
 
+  it("passwordSchema rejette un mot de passe sans majuscule ni symbole", () => {
+    const result = passwordSchema.safeParse("motdepasse1");
+    assert.equal(result.success, false);
+  });
+
   it("hashResetToken est deterministe", () => {
     const token = "abc123";
     assert.equal(hashResetToken(token), hashResetToken(token));

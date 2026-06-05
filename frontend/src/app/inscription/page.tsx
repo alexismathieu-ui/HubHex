@@ -5,7 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 import { AuthPageChrome } from "../../components/auth/AuthPageChrome";
+import { PasswordRequirements } from "../../components/auth/PasswordRequirements";
 import { useRequireGuest } from "../../hooks/useRequireGuest";
+import { isPasswordStrong } from "../../lib/auth/passwordPolicy";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { authCardClass, authInputClass } from "../../lib/auth/authFormStyles";
 import { getErrorMessage } from "../../lib/errors";
@@ -25,10 +27,16 @@ function InscriptionContent() {
       ? `/connexion?redirect=${encodeURIComponent(redirectTo)}`
       : "/connexion";
 
+  const passwordValid = isPasswordStrong(registerForm.password);
+
   const onRegisterSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setRegisterMessage("");
     setSuccess(false);
+    if (!passwordValid) {
+      setRegisterMessage("Le mot de passe doit respecter tous les criteres de securite.");
+      return;
+    }
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
@@ -58,7 +66,6 @@ function InscriptionContent() {
   return (
     <AuthPageChrome
       title="Inscription"
-      subtitle="Creez votre compte et hebergez votre premier depot en quelques minutes."
       footer={
         <>
           Deja inscrit ?{" "}
@@ -69,9 +76,6 @@ function InscriptionContent() {
       }
     >
       <form className={authCardClass} onSubmit={onRegisterSubmit}>
-        <p className="mb-4 font-mono text-xs text-slate-500">
-          // mot de passe fort : majuscule, minuscule, chiffre, symbole
-        </p>
         <div className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5 text-sm text-slate-300">
             Nom d&apos;utilisateur
@@ -113,10 +117,12 @@ function InscriptionContent() {
               }
               required
             />
+            <PasswordRequirements password={registerForm.password} />
           </label>
           <button
             type="submit"
-            className="mt-1 rounded-lg bg-cyan-500 px-4 py-2.5 font-display font-semibold text-slate-950 transition hover:bg-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-300"
+            disabled={!passwordValid}
+            className="mt-1 rounded-lg bg-cyan-500 px-4 py-2.5 font-display font-semibold text-slate-950 transition hover:bg-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Creer mon compte
           </button>

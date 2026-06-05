@@ -1,4 +1,5 @@
 import type { ProfileFormState, ProfilePatchBody, ProfilePatchResult, User } from "../../types/profile";
+import { validatePasswordPolicy } from "./passwordPolicy";
 import { normalizeStatusEmoji } from "./statusEmoji";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -54,16 +55,7 @@ export function validateStatusEmoji(emoji: string): string | null {
 }
 
 export function validateNewPassword(password: string): string | null {
-  if (password.length < 8) {
-    return "Le mot de passe doit contenir au moins 8 caracteres.";
-  }
-  if (password.length > 100) {
-    return "Le mot de passe est trop long.";
-  }
-  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-    return "Le mot de passe doit inclure au moins une lettre et un chiffre.";
-  }
-  return null;
+  return validatePasswordPolicy(password);
 }
 
 export function buildProfilePatchBody(

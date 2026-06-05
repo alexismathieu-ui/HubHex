@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { HubHexLogo } from "../layout/HubHexLogo";
 import { PublicPageShell } from "../layout/PublicPageShell";
+import { PublicSiteNav } from "../layout/PublicSiteNav";
+import { IdlePageRefresh } from "./IdlePageRefresh";
 import { KanbanPreviewWindow } from "./KanbanPreviewWindow";
 
 const FEATURES = [
@@ -24,9 +25,9 @@ const FEATURES = [
     icon: "{ }",
   },
   {
-    title: "Communaute",
+    title: "Communaute dev",
     description:
-      "Publiez vos depots, commentez ceux des autres, recherchez par mots-cles et technologies.",
+      "Inspirez-vous des projets publics, echangez avec d'autres developpeurs et faites rayonner vos depots ouverts.",
     icon: "◎",
   },
   {
@@ -46,40 +47,8 @@ const FEATURES = [
 export function LandingPage() {
   return (
     <PublicPageShell>
-      <header className="sticky top-0 z-10 border-b border-slate-700/50 bg-slate-950/60 backdrop-blur-md">
-        <div className="mx-auto flex min-h-[4rem] max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 md:px-8 md:py-3.5">
-          <HubHexLogo href="/" size={48} className="shrink-0" />
-          <nav
-            className="flex flex-wrap items-center justify-end gap-1.5 text-sm font-display"
-            aria-label="Navigation principale"
-          >
-            <a
-              href="#fonctionnalites"
-              className="rounded-md px-2.5 py-1 text-slate-400 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/80 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400"
-            >
-              Fonctionnalites
-            </a>
-            <a
-              href="#differentiation"
-              className="rounded-md px-2.5 py-1 text-slate-400 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/80 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400"
-            >
-              Pourquoi HubHex
-            </a>
-            <Link
-              href="/connexion"
-              className="rounded-md px-2.5 py-1 text-slate-300 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/80 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-400"
-            >
-              Connexion
-            </Link>
-            <Link
-              href="/inscription"
-              className="rounded-lg bg-cyan-500 px-3 py-1.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:bg-cyan-400 hover:shadow-cyan-400/40 focus-visible:ring-2 focus-visible:ring-cyan-300"
-            >
-              Commencer
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <IdlePageRefresh />
+      <PublicSiteNav active="home" />
 
       <main>
         <section className="relative overflow-hidden border-b border-slate-700/40 px-4 py-20 md:px-8 md:py-28">
@@ -183,7 +152,7 @@ export function LandingPage() {
             </h2>
             <p className="mt-4 text-slate-400">
               Inscrivez-vous pour acceder au tableau de bord, creer un depot depuis un template et
-              explorer la communaute.
+              rejoindre la communaute.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
@@ -206,6 +175,14 @@ export function LandingPage() {
       <footer className="border-t border-slate-700/50 bg-slate-950/40 px-4 py-8 text-center text-sm text-slate-500 backdrop-blur-sm md:px-8">
         <p className="font-display">HubHex — gestion et partage de projets developpeur</p>
         <p className="mt-2 font-mono text-xs">
+          <Link href="/faq" className="text-cyan-400 hover:text-cyan-300">
+            FAQ
+          </Link>
+          <span className="mx-2 text-slate-700">·</span>
+          <Link href="/contact" className="text-cyan-400 hover:text-cyan-300">
+            Contact
+          </Link>
+          <span className="mx-2 text-slate-700">·</span>
           <Link href="/inscription" className="text-cyan-400 hover:text-cyan-300">
             Inscription
           </Link>
@@ -213,8 +190,6 @@ export function LandingPage() {
           <Link href="/connexion" className="text-cyan-400 hover:text-cyan-300">
             Connexion
           </Link>
-          <span className="mx-2 text-slate-700">·</span>
-          <span>Next.js · Express · PostgreSQL</span>
         </p>
       </footer>
     </PublicPageShell>

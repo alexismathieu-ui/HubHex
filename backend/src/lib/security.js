@@ -24,11 +24,14 @@ const usernameSchema = z
 
 const passwordSchema = z
   .string()
-  .min(8)
+  .min(8, "Password must be at least 8 characters.")
   .max(100)
+  .refine((value) => /[a-z]/.test(value), "Password must include at least one lowercase letter.")
+  .refine((value) => /[A-Z]/.test(value), "Password must include at least one uppercase letter.")
+  .refine((value) => /[0-9]/.test(value), "Password must include at least one number.")
   .refine(
-    (value) => /[A-Za-z]/.test(value) && /[0-9]/.test(value),
-    "Password must include at least one letter and one number.",
+    (value) => /[^A-Za-z0-9]/.test(value),
+    "Password must include at least one special character.",
   );
 
 /** Verifie si un mot de passe respecte la politique actuelle (inscription / changement). */

@@ -12,6 +12,16 @@ const API_MESSAGE_FR: Record<string, string> = {
     "Lettres, chiffres, tirets et underscores uniquement.",
   "Password must include at least one letter and one number.":
     "Le mot de passe doit inclure au moins une lettre et un chiffre.",
+  "Password must be at least 8 characters.":
+    "Le mot de passe doit contenir au moins 8 caracteres.",
+  "Password must include at least one lowercase letter.":
+    "Le mot de passe doit inclure au moins une minuscule.",
+  "Password must include at least one uppercase letter.":
+    "Le mot de passe doit inclure au moins une majuscule.",
+  "Password must include at least one number.":
+    "Le mot de passe doit inclure au moins un chiffre.",
+  "Password must include at least one special character.":
+    "Le mot de passe doit inclure au moins un caractere special.",
 };
 
 export function translateProfileApiMessage(message: string | undefined): string | undefined {
