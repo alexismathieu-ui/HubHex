@@ -4,6 +4,9 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
 import type { editor } from "monaco-editor";
 
+import "../../lib/depots/monacoSetup";
+import { registerKeywordCompletions } from "../../lib/depots/monacoKeywordCompletions";
+
 const Editor = dynamic(() => import("@monaco-editor/react").then((mod) => mod.default), {
   ssr: false,
   loading: () => (
@@ -81,7 +84,22 @@ export function MonacoEditorPane({
         horizontalScrollbarSize: 10,
       },
       suggestOnTriggerCharacters: true,
-      quickSuggestions: true,
+      quickSuggestions: {
+        other: true,
+        comments: false,
+        strings: true,
+      },
+      wordBasedSuggestions: "currentDocument" as const,
+      suggest: {
+        showKeywords: true,
+        showSnippets: true,
+        showFunctions: true,
+        showMethods: true,
+        showConstructors: true,
+        preview: true,
+      },
+      parameterHints: { enabled: true },
+      tabCompletion: "on" as const,
       folding: true,
       glyphMargin: true,
       guides: {
@@ -104,6 +122,10 @@ export function MonacoEditorPane({
     }
     model.updateOptions({ tabSize, insertSpaces: true });
   }, [language, tabSize]);
+
+  const handleBeforeMount = (monaco: typeof import("monaco-editor")) => {
+    registerKeywordCompletions(monaco);
+  };
 
   const handleMount = (mountedEditor: editor.IStandaloneCodeEditor, monaco: typeof import("monaco-editor")) => {
     editorRef.current = mountedEditor;
@@ -142,6 +164,7 @@ export function MonacoEditorPane({
       value={value}
       theme="vs-dark"
       onChange={(next) => onChangeRef.current?.(next ?? "")}
+      beforeMount={handleBeforeMount}
       onMount={handleMount}
       options={options}
     />

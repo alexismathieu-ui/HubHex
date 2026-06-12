@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-import { PublicPageShell } from "../layout/PublicPageShell";
-import { PublicSiteNav } from "../layout/PublicSiteNav";
+import { PublicMarketingFooter } from "../layout/PublicMarketingFooter";
 import { IdlePageRefresh } from "./IdlePageRefresh";
 import { KanbanPreviewWindow } from "./KanbanPreviewWindow";
 
@@ -46,10 +45,8 @@ const FEATURES = [
 
 export function LandingPage() {
   return (
-    <PublicPageShell>
+    <>
       <IdlePageRefresh />
-      <PublicSiteNav active="home" />
-
       <main>
         <section className="relative overflow-hidden border-b border-slate-700/40 px-4 py-20 md:px-8 md:py-28">
           <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
@@ -171,27 +168,7 @@ export function LandingPage() {
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-slate-700/50 bg-slate-950/40 px-4 py-8 text-center text-sm text-slate-500 backdrop-blur-sm md:px-8">
-        <p className="font-display">HubHex — gestion et partage de projets developpeur</p>
-        <p className="mt-2 font-mono text-xs">
-          <Link href="/faq" className="text-cyan-400 hover:text-cyan-300">
-            FAQ
-          </Link>
-          <span className="mx-2 text-slate-700">·</span>
-          <Link href="/contact" className="text-cyan-400 hover:text-cyan-300">
-            Contact
-          </Link>
-          <span className="mx-2 text-slate-700">·</span>
-          <Link href="/inscription" className="text-cyan-400 hover:text-cyan-300">
-            Inscription
-          </Link>
-          <span className="mx-2 text-slate-700">·</span>
-          <Link href="/connexion" className="text-cyan-400 hover:text-cyan-300">
-            Connexion
-          </Link>
-        </p>
-      </footer>
-    </PublicPageShell>
+      <PublicMarketingFooter />
+    </>
   );
 }

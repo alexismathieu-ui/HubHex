@@ -4,7 +4,7 @@ HUBHEX — PLAN COMPLET DU PROJET (CDC + DIFFERENTIATION)
 Document de travail : tout ce qu'il y a a faire / a livrer, regroupe en blocs.
 A cocher au fur et a mesure ([ ] -> [x]).
 
-Derniere mise a jour : juin 2026 (aligne sur l'etat reel du code).
+Derniere mise a jour : 5 juin 2026 (explorateur authFetch, creation inline, Monaco suggestions).
 
 --------------------------------------------------------------------------------
 0. AVANT / CADRE
@@ -36,7 +36,7 @@ Derniere mise a jour : juin 2026 (aligne sur l'etat reel du code).
     - Graphe HubHex : relations entre projets (ex. meme techno, meme auteur,
       lien inspire de / suite de — defini dans le modele)
 [ ] Migrations ou scripts SQL versionnes (schema au boot via db.js a la place).
-[x] Export .sql de la base (livrable CDC) — hubhex_schema.sql + npm run db:export.
+[x] Export .sql de la base (livrable CDC) — backend/database/hubhex_schema.sql + npm run db:export.
 
 --------------------------------------------------------------------------------
 2. BACKEND (API Node.js)
@@ -44,6 +44,7 @@ Derniere mise a jour : juin 2026 (aligne sur l'etat reel du code).
 [x] Serveur HTTP (Express) + CORS + parsing JSON.
 [x] Authentification : inscription, connexion, JWT access + refresh rotatif.
 [x] Hash des mots de passe (bcrypt — jamais en clair).
+[x] Politique MDP forte (8 car., maj, min, chiffre, symbole — Zod security.js).
 [x] Routes CRUD projets (titre, description, technologies, visibilite).
 [x] Routes CRUD taches + mise a jour statut / colonnes Kanban.
 [x] Routes notes techniques (entite separee).
@@ -63,7 +64,10 @@ Derniere mise a jour : juin 2026 (aligne sur l'etat reel du code).
 3. FRONTEND (Next.js)
 --------------------------------------------------------------------------------
 [x] Pages / layout responsive (navigation, footer si besoin).
-[x] Page accueil / (presentation, CTA) ; auth UI inscription /connexion separees.
+[x] Page accueil / (presentation, CTA) ; pages /faq et /contact ; auth inscription /connexion.
+[x] Layout public partage (public)/ — navigation rapide accueil / FAQ / contact.
+[x] Inscription : validation MDP temps reel (PasswordRequirements) + bouton conditionnel.
+[x] Theme utilisateur par compte (localStorage hubhex_theme_{userId}, sans cle globale).
 [x] CRUD projets (formulaires, liste, detail).
 [x] Kanban : colonnes, glisser-deposer ou boutons de changement de statut.
 [x] Notes techniques (affichage / edition selon modele BDD).
@@ -75,14 +79,21 @@ Derniere mise a jour : juin 2026 (aligne sur l'etat reel du code).
     - Ecran detail projet : stack vivante (liens, statuts, snippets) + journal
     - Flux creer depuis un template (choix du modele -> projet pre-rempli)
     - Page ou onglet HubHex : visualisation graphe (projets + liens)
-[x] Apercu marketing Kanban sur l'accueil (KanbanPreviewWindow).
-[x] Fond public techno au survol souris (CodeAnimatedBackground / PublicPageShell).
+[x] Apercu marketing Kanban sur l'accueil (KanbanPreviewWindow — 3 colonnes enrichi).
+[x] Fond public techno au survol souris (CodeAnimatedBackground optimise RAF).
+[x] Explorateur fichiers : mode liste redimensionnable + menu Actions compact.
+[x] Explorateur : authFetch (refresh JWT auto) ; creation fichier/dossier inline (sans prompt).
+[x] Explorateur : hauteur compacite (defaut 520px) ; header Arborescence adaptatif.
+[x] Vue schema : modale mind-map horizontale (zoom, DnD simple/multiple, racine centree).
+[x] Editeur Monaco : workers CDN + suggestions mots-cles par langage (monacoSetup.ts).
+[x] Notes techniques : date affichee ; stack vivante : UI badges colores.
 [ ] Accessibilite de base WCAG complete (labels partiels ; audit a approfondir).
 
 --------------------------------------------------------------------------------
 4. SECURITE (CDC)
 --------------------------------------------------------------------------------
 [x] Mots de passe jamais stockes en clair ; politique de hash robuste (bcrypt 12).
+[x] Entropie MDP a l'inscription (majuscule, minuscule, chiffre, symbole — front + API).
 [x] Protection routes privees (token + middleware).
 [x] Validation et assainissement des entrees (cote API — Zod).
 [x] Limitation abus simple (rate limit sur auth/commentaires si ENABLE_RATE_LIMIT).

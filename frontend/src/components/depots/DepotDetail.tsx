@@ -194,27 +194,36 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
 
       {message ? <p className="text-sm text-slate-300">{message}</p> : null}
 
-      <div className="flex flex-wrap gap-2 border-b border-slate-700/50 pb-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
+      <div className="flex flex-col gap-2 border-b border-slate-700/50 pb-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-display transition-all duration-300 ${
+                activeTab === tab.id
+                  ? "bg-[color:var(--hubhex-accent-muted)] font-medium text-accent"
+                  : "text-slate-400 hover:bg-slate-900/80 hover:text-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex shrink-0 gap-2 sm:ml-auto">
+          <AppButton type="button" variant="ghost" onClick={startEdit} className="flex-1 px-3 py-1.5 sm:flex-none">
+            Modifier
+          </AppButton>
+          <AppButton
             type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`rounded-md px-3 py-1.5 text-sm font-display transition-all duration-300 ${
-              activeTab === tab.id
-                ? "bg-[color:var(--hubhex-accent-muted)] font-medium text-accent"
-                : "text-slate-400 hover:bg-slate-900/80 hover:text-slate-200"
-            }`}
+            variant="danger"
+            onClick={() => setPendingDelete(true)}
+            className="flex-1 px-3 py-1.5 sm:flex-none"
           >
-            {tab.label}
-          </button>
-        ))}
-        <AppButton type="button" variant="ghost" onClick={startEdit} className="ml-auto px-3 py-1.5">
-          Modifier
-        </AppButton>
-        <AppButton type="button" variant="danger" onClick={() => setPendingDelete(true)} className="px-3 py-1.5">
-          Supprimer
-        </AppButton>
+            Supprimer
+          </AppButton>
+        </div>
       </div>
 
       <div>

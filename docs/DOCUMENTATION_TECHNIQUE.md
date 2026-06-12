@@ -116,6 +116,12 @@ Suppression de commentaires par **l'auteur** ou le **proprietaire** du depot pub
 
 Voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.md) (PostgreSQL, `.env`, ports 4000 / 3000).
 
+## Deploiement production
+
+Docker Compose, variables d'environnement completes et checklist securite : [DEPLOIEMENT_PRODUCTION.md](DEPLOIEMENT_PRODUCTION.md).
+
+Verification fonctionnalites README : [CHECKLIST_FONCTIONNALITES.md](CHECKLIST_FONCTIONNALITES.md).
+
 ## Export base de donnees
 
 | Commande | Fichier produit | Contenu |

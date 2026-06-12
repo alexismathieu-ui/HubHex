@@ -4,17 +4,20 @@ import { useEffect, useRef, useState } from "react";
 
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { createAuthHeaders } from "../../lib/apiHeaders";
+import { authFetch } from "../../lib/auth/authFetch";
 import {
   fileIconLabel,
   languageDisplayLabel,
   languageFromFileName,
   tabSizeForLanguage,
 } from "../../lib/depots/editorLanguage";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { getErrorMessage } from "../../lib/errors";
 import { readApiJsonOrThrow } from "../../lib/readApiJson";
 import type { EditorTab, FileContentCacheEntry } from "../../types/depot";
 import type { ProjectFileNode } from "../../types/hubhex";
 import { MonacoEditorPane } from "./MonacoEditorPane";
+import { SimpleCodeViewer } from "./SimpleCodeViewer";
 
 interface DepotCodeWorkbenchProps {
   token: string;
@@ -72,6 +75,7 @@ export function DepotCodeWorkbench({
   const [showMinimap, setShowMinimap] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadNonce, setReloadNonce] = useState(0);
+  const isMobileLayout = useMediaQuery("(max-width: 1023px)");
 
   const isDirty = content !== savedContent;
   const editorFilePath = activeTab?.path || activeTab?.name || "";
@@ -85,7 +89,7 @@ export function DepotCodeWorkbench({
 
   const fetchFileContent = async (fileId: number) => {
     const url = `${API_BASE_URL}/projects/${projectIdRef.current}/files/${fileId}`;
-    const response = await fetch(url, { headers: createAuthHeaders(tokenRef.current, false) });
+    const response = await authFetch(url, { headers: createAuthHeaders(tokenRef.current, false) });
     const data = await readApiJsonOrThrow<FileItemResponse>(response, url);
     return data.item;
   };
@@ -196,7 +200,7 @@ export function DepotCodeWorkbench({
     setStatus("");
     try {
       const url = `${API_BASE_URL}/projects/${projectId}/files/${activeTabId}`;
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: "PATCH",
         headers: createAuthHeaders(tokenRef.current),
         body: JSON.stringify({ content }),
@@ -221,7 +225,7 @@ export function DepotCodeWorkbench({
     }
     try {
       const url = `${API_BASE_URL}/projects/${projectId}/files/${activeTabId}/download`;
-      const response = await fetch(url, { headers: createAuthHeaders(tokenRef.current, false) });
+      const response = await authFetch(url, { headers: createAuthHeaders(tokenRef.current, false) });
       if (!response.ok) {
         throw new Error("Telechargement impossible.");
       }
@@ -309,7 +313,11 @@ export function DepotCodeWorkbench({
         })}
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-[#252526] bg-[#252526] px-2 py-1">
+      <div
+        className={`flex shrink-0 flex-wrap items-center gap-1 border-b border-[#252526] bg-[#252526] px-2 py-1 ${
+          isMobileLayout ? "hidden" : ""
+        }`}
+      >
         {encoding === "base64" ? (
           <button
             type="button"
@@ -394,31 +402,52 @@ export function DepotCodeWorkbench({
             </button>
           </div>
         ) : activeTabId ? (
-          <MonacoEditorPane
-            key={`${activeTabId}-${language}`}
-            path={editorFilePath ? `/${editorFilePath}` : undefined}
-            value={content}
-            language={language}
-            tabSize={tabSize}
-            onChange={handleContentChange}
-            onSave={onSave}
-            onCursorChange={setCursor}
-            wordWrap={wordWrap}
-            fontSize={fontSize}
-            showMinimap={showMinimap}
-          />
+          isMobileLayout ? (
+            <SimpleCodeViewer
+              content={content}
+              language={language}
+              filePath={editorFilePath || undefined}
+            />
+          ) : (
+            <MonacoEditorPane
+              key={`${activeTabId}-${language}`}
+              path={editorFilePath ? `/${editorFilePath}` : undefined}
+              value={content}
+              language={language}
+              tabSize={tabSize}
+              onChange={handleContentChange}
+              onSave={onSave}
+              onCursorChange={setCursor}
+              wordWrap={wordWrap}
+              fontSize={fontSize}
+              showMinimap={showMinimap}
+            />
+          )
         ) : null}
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 border-t border-[#007acc] bg-[#007acc] px-3 py-0.5 text-[11px] text-white">
-        <span>
-          Ln {cursor.line}, Col {cursor.column}
-        </span>
-        <span>{languageDisplayLabel(language)}</span>
-        <span>UTF-8</span>
-        <span>Espaces: {tabSize}</span>
-        {isDirty ? <span className="text-amber-200">Modifie</span> : <span>Enregistre</span>}
-        <span className="ml-auto opacity-80">Ctrl+S</span>
+      <div
+        className={`flex shrink-0 items-center gap-4 border-t border-[#007acc] bg-[#007acc] px-3 py-0.5 text-[11px] text-white ${
+          isMobileLayout ? "justify-between" : ""
+        }`}
+      >
+        {isMobileLayout ? (
+          <>
+            <span>{languageDisplayLabel(language)}</span>
+            <span className="opacity-80">Lecture seule</span>
+          </>
+        ) : (
+          <>
+            <span>
+              Ln {cursor.line}, Col {cursor.column}
+            </span>
+            <span>{languageDisplayLabel(language)}</span>
+            <span>UTF-8</span>
+            <span>Espaces: {tabSize}</span>
+            {isDirty ? <span className="text-amber-200">Modifie</span> : <span>Enregistre</span>}
+            <span className="ml-auto opacity-80">Ctrl+S</span>
+          </>
+        )}
       </div>
     </div>
   );

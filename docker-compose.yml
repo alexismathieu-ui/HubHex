@@ -1,0 +1,64 @@
+# HubHex — stack locale ou demo production (Docker)
+# Usage : cp .env.docker.example .env.docker puis docker compose --env-file .env.docker up --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hubhex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hubhex_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-hubhex}
+    volumes:
+      - hubhex_pg_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hubhex} -d ${POSTGRES_DB:-hubhex}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hubhex}:${POSTGRES_PASSWORD:-hubhex_secret}@db:5432/${POSTGRES_DB:-hubhex}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET requis (32+ caracteres)}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_DAYS: ${JWT_REFRESH_EXPIRES_DAYS:-7}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ENABLE_RATE_LIMIT: ${ENABLE_RATE_LIMIT:-true}
+      ALLOW_DEV_RESET_TOKEN: "false"
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  hubhex_pg_data:

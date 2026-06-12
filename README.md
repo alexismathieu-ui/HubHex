@@ -62,7 +62,7 @@ Premier usage : page d'accueil http://localhost:3000/ puis **S'inscrire** (`/ins
 HubHex/
   backend/          API Express
   frontend/         Application Next.js
-  database/         Export schema SQL
+  backend/database/ Export schema SQL
   docs/             Documentation utilisateur, technique, soutenance
   postman/          Collection tests API
   http/             Fichiers REST Client
@@ -70,8 +70,10 @@ HubHex/
 
 ## Fonctionnalites principales
 
-- **Auth** : inscription, connexion, profil (avatar, pseudo, statut), reset MDP (SMTP ou mode dev)
-- **Depots** : CRUD, slug, fichiers (import ZIP, editeur texte), Kanban drag & drop
+- **Auth** : inscription (MDP fort : maj/min/chiffre/symbole), connexion, profil, reset MDP
+- **Pages publiques** : accueil, FAQ, contact — layout partage, navigation rapide
+- **Theme** : personnalisation par compte (espace connecte) ; pages publiques en cyan fixe
+- **Depots** : CRUD, slug, fichiers (liste + schema mind-map modale, zoom, DnD multiple), Monaco (desktop) / apercu code mobile, Kanban
 - **Differentiation** : stack vivante, journal de decisions, notes techniques, templates, graphe HubHex
 - **Communaute** : projets publics, commentaires, recherche et filtres
 - **Dashboard** : resume et activite recente
@@ -82,13 +84,27 @@ HubHex/
 |----------|-------------|
 | `backend/npm run dev` | API en developpement |
 | `backend/npm test` | Tests automatises (node:test) |
-| `backend/npm run db:export` | Export schema vers `database/hubhex_schema.sql` |
-| `backend/npm run db:dump` | Export complet (structure + donnees) vers `database/hubhex_full_dump.sql` |
+| `backend/npm run db:export` | Export schema vers `backend/database/hubhex_schema.sql` |
+| `backend/npm run db:dump` | Export complet (structure + donnees) vers `backend/database/hubhex_full_dump.sql` |
 | `backend/npm run share` | Tunnel public Cloudflare vers l'API (audit jury) |
 | `backend/npm run reset-password -- email NouveauMdp1!` | Reset MDP admin |
 
+## Deploiement production (Docker)
+
+```bash
+cp .env.docker.example .env.docker
+# Editer JWT_SECRET, mots de passe, FRONTEND_URL, NEXT_PUBLIC_API_URL
+docker compose --env-file .env.docker up --build
+```
+
+Guide complet : [docs/DEPLOIEMENT_PRODUCTION.md](docs/DEPLOIEMENT_PRODUCTION.md) (variables `.env`, VPS, securite, captures).
+
+Verification des fonctionnalites annoncees : [docs/CHECKLIST_FONCTIONNALITES.md](docs/CHECKLIST_FONCTIONNALITES.md).
+
 ## Documentation
 
+- [Deploiement production & Docker](docs/DEPLOIEMENT_PRODUCTION.md)
+- [Checklist fonctionnalites (README vs realise)](docs/CHECKLIST_FONCTIONNALITES.md)
 - [Tests de securite API](docs/TESTS_SECURITE.md) — JWT + refresh token, checklist audit
 - [Partager l’API via un lien (prof)](docs/GUIDE_LIEN_API.md) — tunnel + URL publique
 - [Guide test API (correcteur / prof)](docs/GUIDE_TEST_API.md) — Postman, REST Client, curl
@@ -103,12 +119,12 @@ HubHex/
 ## Livrables CDC
 
 - Code source frontend + backend (ce depot)
-- Export BDD : regenerer avant remise avec `cd backend && npm run db:export` (`database/hubhex_schema.sql`) ; dump complet avec `npm run db:dump` (`database/hubhex_full_dump.sql`, non versionne)
+- Export BDD : regenerer avant remise avec `cd backend && npm run db:export` (`backend/database/hubhex_schema.sql`) ; dump complet avec `npm run db:dump` (`backend/database/hubhex_full_dump.sql`, non versionne)
 - Documentation utilisateur et technique (`docs/`)
 - Support de presentation (`docs/SOUTENANCE.md`)
 
 ## Securite (resume)
 
-- Mots de passe bcrypt (cost 12), JWT access court + refresh rotatif, invalidation si changement MDP
+- Mots de passe bcrypt (cost 12), politique entropie a l'inscription, JWT access court + refresh rotatif
 - Helmet, CORS, rate limits, validation Zod
 - En production : configurer `SMTP_*` pour le reset password (ne pas exposer `ALLOW_DEV_RESET_TOKEN`)

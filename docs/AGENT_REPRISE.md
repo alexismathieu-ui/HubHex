@@ -15,13 +15,27 @@ Tu reprends le projet HubHex (soutenance CODA B1). Lis d'abord :
 
 Contexte rapide :
 - Monorepo : Next.js 16 (TS strict) + Express 5 + PostgreSQL
-- Pages publiques OK : / accueil, /inscription, /connexion
-- Fond techno au survol souris (CodeAnimatedBackground) + KanbanPreviewWindow anime sur l'accueil
+- Pages publiques : / accueil, /faq, /contact, /inscription, /connexion
+  → layout partage (public)/ (PublicMarketingLayout) — nav + fond persistent
 - Auth : JWT access 15 min + refresh 7 j (rotation, cookie HttpOnly API)
-- UI espace connecte refaite (dashboard, depots, profil…) alignee landing
-- Theme personnalise : 3 couleurs (boutons / fond / textes) — localStorage par user
-  → UNIQUEMENT dans (app) via AppShell ; pages publiques = cyan fixe (PublicThemeReset)
-- Profil : modale « Personnaliser le theme » ; statut = 1 emoji max
+- MDP inscription : 8 car. + maj + min + chiffre + symbole (passwordPolicy.ts + security.js)
+- Theme par compte : hubhex_theme_{userId} UNIQUEMENT (pas de cle globale hubhex_theme)
+  → AppShell + modales ; pages publiques = cyan fixe (PublicThemeReset)
+
+Explorateur fichiers (session 5 juin 2026) :
+- DepotFileExplorer.tsx + DepotCodeWorkbench.tsx → authFetch (pas fetch brut)
+  authFetch : frontend/src/lib/auth/authFetch.ts — retry auto sur 401 ACCESS_TOKEN_EXPIRED
+- Hauteur defaut 520px (min 320, max 680) — localStorage hubhex_file_explorer_height
+- Creation fichier/dossier : plus de window.prompt — creation auto + renommage inline
+- Schema = modale mind-map (FileTreeSchemaModal) : zoom, DnD multiple, racine centree
+- Header « Arborescence » adaptatif selon largeur sidebar (clamp)
+
+Monaco editeur :
+- monacoSetup.ts : workers via CDN jsdelivr (MonacoEnvironment.getWorker) — internet utile en dev
+- monacoKeywordCompletions.ts : suggestions mots-cles (C, C#, JS, TS, Python…)
+- MonacoEditorPane.tsx : beforeMount → registerKeywordCompletions
+
+- UI espace connecte alignee landing ; profil = 1 emoji max
 - Ne pas commit/push sans demande explicite
 
 Priorites restantes (MANUEL utilisateur) :
@@ -30,7 +44,8 @@ Priorites restantes (MANUEL utilisateur) :
 - Parcours demo docs/SCENARIO_DEMO.md une fois
 - Tests docs/TESTS_SECURITE.md (cocher apres execution) ; tunnel npm run share puis couper
 
-NE PAS sans demande : commit/push, tunnel Cloudflare permanent, script npm test:security auto.
+NE PAS sans demande : commit/push, tunnel Cloudflare permanent, script npm test:security auto,
+cle localStorage hubhex_theme globale (fuite themes entre comptes).
 
 Reponds en francais. Shell Windows : pas de && ; utiliser ; entre commandes.
 ```
@@ -52,15 +67,31 @@ Reponds en francais. Shell Windows : pas de && ; utiliser ; entre commandes.
 
 ---
 
+## Points d'entree code (session juin 2026)
+
+| Zone | Fichiers |
+|------|----------|
+| Pages publiques | `frontend/src/app/(public)/` |
+| Theme par user | `frontend/src/lib/theme/theme.ts`, `ThemeContext.tsx` |
+| MDP inscription | `frontend/src/lib/auth/passwordPolicy.ts`, `backend/src/lib/security.js` |
+| Explorateur fichiers | `DepotFileExplorer.tsx`, `DepotCodeWorkbench.tsx`, `FileExplorerToolbar.tsx` |
+| Auth fetch API | `frontend/src/lib/auth/authFetch.ts` |
+| Schema fichiers | `FileTreeSchemaModal.tsx`, `fileTreeLayout.ts` |
+| Monaco editeur | `MonacoEditorPane.tsx`, `monacoSetup.ts`, `monacoKeywordCompletions.ts` |
+| Langage editeur | `frontend/src/lib/depots/editorLanguage.ts` |
+
+---
+
 ## Ne pas toucher / risques malus
 
 | Element | Raison |
 |---------|--------|
 | `backend/.env` | Secrets — jamais committer |
-| `database/hubhex_full_dump.sql` | Donnees sensibles — gitignore |
+| `backend/database/hubhex_full_dump.sql` | Donnees sensibles — gitignore |
 | Tunnel `npm run share` laisse ouvert | Expose l'API locale au public |
 | `git push --force` sur main | Destructif |
 | Reactiver script `test:security` npm | Supprime volontairement |
+| `localStorage hubhex_theme` (sans userId) | Melange les themes entre comptes |
 
 ---
 
@@ -72,6 +103,7 @@ cd c:\Users\User\HubHex\frontend; npm run dev
 ```
 
 - Accueil : http://localhost:3000/
+- FAQ : http://localhost:3000/faq
 - API health : http://localhost:4000/api/health
 
 ---
@@ -79,6 +111,6 @@ cd c:\Users\User\HubHex\frontend; npm run dev
 ## Si l'utilisateur demande du code
 
 - Respecter les conventions existantes (Tailwind slate/cyan, composants dans `frontend/src/components/`)
-- Theme user : applyThemeToElement sur AppShell uniquement — jamais :root global hors reset public
-- Ne pas refondre auth/tunnel sans demande
+- Theme user : `applyThemeToElement` sur AppShell / modales — jamais `:root` global hors reset public
+- Theme storage : uniquement `hubhex_theme_{userId}`
 - Build : `cd frontend; npm run build` avant de valider le front

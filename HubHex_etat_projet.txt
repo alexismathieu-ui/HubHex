@@ -1,14 +1,14 @@
 ================================================================================
 HUBHEX — ETAT DU PROJET (fait / reste a faire)
 ================================================================================
-Document mis a jour le 5 juin 2026 (sync handoff agent) — pour reprise par un agent / developpeur.
+Document mis a jour le 5 juin 2026 (session explorateur fichiers + Monaco + authFetch).
 
 Ce fichier resume l'etat reel du depot apres les dernieres sessions (refonte UI espace
-connecte, theme personnalisable par utilisateur, pages publiques cyan fixe, modale theme,
-statut profil = 1 emoji, export BDD, docs jury, etc.).
+connecte, theme par compte, pages FAQ/Contact, modale schema arborescence, politique MDP,
+explorateur fichiers authFetch + creation inline, Monaco suggestions, etc.).
 
-Progression globale estimee soutenance CDC : ~90–93 % fonctionnel ;
-livrables documentaires ~88–90 % ; differentiation ~82 % ; securite auth renforcee ~90 %.
+Progression globale estimee soutenance CDC : ~92–95 % fonctionnel ;
+livrables documentaires ~88–90 % ; differentiation ~85 % ; securite auth renforcee ~92 %.
 
 ================================================================================
 0. RESUME POUR LE PROCHAIN AGENT (lecture rapide)
@@ -33,6 +33,8 @@ AUTH (important — change recemment)
   - Front : localStorage hubhex_token + hubhex_refresh ; renouvellement auto ~14 min
   - cookie-parser + cookie HttpOnly hubhex_refresh sur path /api/auth
   - Revocation refresh : logout, changement MDP, reset MDP, suppression compte
+  - Explorateur + editeur : authFetch (frontend/src/lib/auth/authFetch.ts) — retry auto
+        si 401 ACCESS_TOKEN_EXPIRED (DepotFileExplorer, DepotCodeWorkbench)
 
 PARTAGER L'API AU PROF / AUDIT CYBER (sans qu'il installe le projet)
   1. npm run dev (backend)
@@ -43,23 +45,25 @@ PARTAGER L'API AU PROF / AUDIT CYBER (sans qu'il installe le projet)
   Pas de script npm test:security (retire sur demande utilisateur).
 
 EXPORT BASE DE DONNEES
-  - npm run db:export  → database/hubhex_schema.sql (structure commentee)
-  - npm run db:dump    → database/hubhex_full_dump.sql (complet, gitignore)
+  - npm run db:export  → backend/database/hubhex_schema.sql (structure commentee)
+  - npm run db:dump    → backend/database/hubhex_full_dump.sql (complet, gitignore)
   Script : backend/scripts/export-full-database.js
 
 TYPOGRAPHIE (pages publiques)
   - Space Grotesk : --font-display (titres, UI) — frontend/src/app/layout.tsx
   - JetBrains Mono : --font-mono (champs, snippets fond) — frontend/src/app/globals.css
 
-PAGES PUBLIQUES (accueil + auth)
-  - / : LandingPage (hero, fonctionnalites, CTA, hovers cartes/CTA/header)
-        Redirection auto vers /tableau-de-bord si deja connecte
-  - /inscription : formulaire inscription (AuthPageChrome), page dediee
-  - /connexion : login + mot de passe oublie + lien inscription
-  - PublicPageShell : enveloppe accueil + auth
-  - CodeAnimatedBackground : fond slate-950 ; spotlight souris ~340px revele grille + code
-        qui defile ; pause si prefers-reduced-motion
-  - KanbanPreviewWindow : entree, float, cycle todo/in_progress/done, hovers, curseur clignotant
+PAGES PUBLIQUES (accueil + auth + FAQ + contact)
+  - Route group (public)/layout.tsx : shell partage (PublicMarketingLayout) — nav + fond
+        persistent entre /, /faq, /contact (navigation rapide)
+  - / : LandingPage (hero, fonctionnalites, CTA, hovers) — IdlePageRefresh 5 s si inactif
+  - /faq : questions frequentes (cartes hover, entree animee)
+  - /contact : support + liens utiles
+  - /inscription : politique MDP forte + liste criteres temps reel ; bouton desactive si KO
+  - /connexion : login + mot de passe oublie (pas de bouton Accueil — logo suffit)
+  - PublicSiteNav : FAQ, Contact, Connexion, Commencer (prefetch)
+  - PublicPageShell + CodeAnimatedBackground (RAF uniquement si souris visible / onglet actif)
+  - KanbanPreviewWindow : 3 colonnes, cartes, barre progression sprint, priorites colorees
 
 LOGO / FAVICON
   - frontend/public/logo.png (image utilisateur rognee, juin 2026)
@@ -72,12 +76,17 @@ EDITEUR MONACO (type VS Code)
   - Detection langage par extension/chemin : frontend/src/lib/depots/editorLanguage.ts
   - Chemin complet fichier dans onglet (buildFilePathForNode) pour .cs, .js, .tsx, etc.
   - tabSize selon langage ; format Shift+Alt+F ; MonacoEditorPane.tsx
+  - Workers Monaco (CDN jsdelivr) : frontend/src/lib/depots/monacoSetup.ts
+  - Suggestions mots-cles par langage : frontend/src/lib/depots/monacoKeywordCompletions.ts
+  - Options : quickSuggestions, wordBasedSuggestions, tabCompletion ; Ctrl+Espace force
+  - Note : connexion internet utile (chargement ressources Monaco via CDN)
 
-GIT (etat actuel — 1 juin 2026)
-  - Branche main, origin/main a jour (https://github.com/alexismathieu-ui/HubHex)
-  - 48ef746 : UI publique (landing, auth separee, fond, logo, a11y nav)
-  - 3fae8d0 : docs soutenance (plan, ORAL_GRILLE_B1, SCENARIO_DEMO, etat projet)
-  - Working tree propre apres 3fae8d0
+GIT (etat actuel — 5 juin 2026)
+  - Branche main (https://github.com/alexismathieu-ui/HubHex)
+  - Derniers commits pushes : 48ef746 (UI publique), 3fae8d0 (docs soutenance)
+  - Working tree LOCAL : modifs non committees (session explorateur + Monaco — juin 2026)
+        → DepotFileExplorer, DepotCodeWorkbench, MonacoEditorPane, monacoSetup.ts,
+           monacoKeywordCompletions.ts, HubHex_etat_projet.txt, docs/AGENT_REPRISE.md
 
 DOCS JURY (a lire pour reprise)
   - docs/CHECKLIST_JOUR_J.md — checklist matin soutenance
@@ -86,18 +95,33 @@ DOCS JURY (a lire pour reprise)
   - docs/SCENARIO_DEMO.md — demo chronometree + variante courte
 
 THEME PERSONNALISE (espace connecte uniquement — juin 2026)
-  - Chaque utilisateur peut customiser 3 couleurs (localStorage, par compte) :
-      boutons | fond anime (grille, code, survol souris) | textes accent (HubHex, liens, labels)
-  - Acces : Mon profil → bouton « Personnaliser le theme » → modale (portal body, animee)
-  - IMPORTANT : pages publiques (/ /connexion /inscription) = cyan classique TOUJOURS
-  - Implementation :
-      ThemeContext (etat + localStorage, ne touche plus :root globalement)
-      AppShell (applyThemeToElement sur wrapper .hubhex-app-theme)
-      PublicThemeReset (reset :root cyan sur pages publiques + au mount)
-      Modale theme : applyThemeToElement sur le panneau (hors AppShell)
-  - Fichiers : frontend/src/lib/theme/theme.ts, context/ThemeContext.tsx,
-      components/theme/ThemeCustomizer.tsx, PublicThemeReset.tsx,
-      components/layout/AppShell.tsx, components/ui/* (AppCard, PageHeader, AppButton…)
+  - Chaque utilisateur : 3 couleurs (localStorage hubhex_theme_{userId} UNIQUEMENT — pas de cle globale)
+  - Changement de compte → theme du compte connecte ou cyan par defaut si jamais personnalise
+  - Acces : Mon profil → « Personnaliser le theme » → modale (portal, animee)
+  - IMPORTANT : pages publiques = cyan fixe (PublicThemeReset)
+  - Fichiers : theme.ts, ThemeContext.tsx, ThemeCustomizer.tsx, PublicThemeReset.tsx, AppShell.tsx
+
+POLITIQUE MOT DE PASSE (inscription + changement profil — juin 2026)
+  - Min 8 car., majuscule, minuscule, chiffre, caractere special
+  - Front : frontend/src/lib/auth/passwordPolicy.ts + PasswordRequirements.tsx
+  - Back : backend/src/lib/security.js (passwordSchema Zod aligne)
+  - Tests : backend/test/auth.test.js
+
+EXPLORATEUR FICHIERS / SCHEMA ARBORESCENCE (juin 2026)
+  - Mode Liste : sidebar redimensionnable (200–520 px, localStorage hubhex_file_sidebar_width)
+  - Hauteur panneau liste+editeur (320–680 px, defaut 520 — hubhex_file_explorer_height)
+  - API fichiers via authFetch (plus d'erreur « Access token expired » sur actions menu)
+  - Creation fichier/dossier : plus de window.prompt — creation auto + renommage inline (Entree/Echap)
+  - Header « Arborescence » adaptatif si sidebar etroite (clamp, Arb. / Arboresc. / Arborescence)
+  - Menu « Actions du depot ▾ » : creer, importer, copier/coller, editer… (FileExplorerToolbar.tsx)
+  - Bouton Schema → modale plein ecran FileTreeSchemaModal.tsx :
+      arbre horizontal mind-map (lignes colorees par niveau, SVG + pastilles)
+      case Racine / centree sur la ligne de depart (quelle que soit la taille de l'arbre)
+      drag & drop simple ou multiple (Ctrl+clic + glisser → POST /files/move)
+      zoom − / + / Reset, Ctrl+molette, raccourcis Ctrl+/−/0
+  - Layout : frontend/src/lib/depots/fileTreeLayout.ts
+  - Notes : date/heure sous chaque titre (ProjectNotesPanel)
+  - Stack vivante : grille 2 col., badges statut colores (ProjectStackPanel)
 
 REFONTE UI ESPACE CONNECTE (juin 2026)
   - Dashboard, depots, profil, communaute, graphe : design aligne landing (fond techno,
@@ -105,45 +129,31 @@ REFONTE UI ESPACE CONNECTE (juin 2026)
   - Profil : statut limite a UN seul emoji (plus de message texte ; status_message efface a la sauvegarde)
   - Hydratation : StatCard utilise <div> pour la valeur (plus de <div> dans <p>)
 
-PROMPT UTILISATEUR POUR PROCHAIN AGENT (resume session UI juin 2026)
-  « Refaire le front partie utilisateur pour coller a l'accueil + theme customizable
-   (boutons / fond / textes separes). Modale centree large avec animations. Chaque user
-   a sa couleur dans l'espace connecte ; accueil/connexion/inscription restent cyan classique.
-   Statut profil = 1 emoji seulement. »
+PROMPT UTILISATEUR POUR PROCHAIN AGENT (derniere session juin 2026)
+  « Corriger token expire dans explorateur (authFetch). Reduire hauteur liste/editeur.
+   Creation fichier/dossier sans alerte navigateur — inline rename. Monaco suggestions.
+   Header Arborescence qui se reduit quand on elargit l'editeur. »
 
 NE PAS FAIRE SANS DEMANDE EXPLICITE
   - Commit / push git (re-commiter seulement si l'utilisateur le demande)
   - Reactiver un script automatique test:security (supprime)
   - Exposer le tunnel Cloudflare en permanence (risque securite)
   - Appliquer le theme utilisateur sur document.documentElement (casserait les pages publiques)
+  - Reintroduire la cle localStorage hubhex_theme globale (themes melanges entre comptes)
 
-FICHIERS CREES / MODIFIES RECEMMENT (session juin 2026)
-  frontend/src/app/page.tsx (accueil + redirect si auth)
-  frontend/src/app/inscription/page.tsx
-  frontend/src/app/connexion/page.tsx (separe de l'inscription)
-  frontend/src/components/landing/LandingPage.tsx
-  frontend/src/components/landing/KanbanPreviewWindow.tsx
-  frontend/src/components/layout/PublicPageShell.tsx
-  frontend/src/components/background/CodeAnimatedBackground.tsx
-  frontend/src/components/auth/AuthPageChrome.tsx
-  backend/scripts/export-full-database.js
-  backend/src/lib/refresh-token.js, auth-cookies.js, auth-session.js, network-addresses.js
-  backend/src/routes/auth.routes.js (refresh/logout)
-  frontend/src/components/layout/HubHexLogo.tsx (tailles parametriques)
-  frontend/src/context/AuthContext.tsx (refresh)
-  docs/GUIDE_LIEN_API.md, GUIDE_TEST_API.md, TESTS_SECURITE.md
-  docs/CHECKLIST_JOUR_J.md, docs/ORAL_GRILLE_B1.md, docs/AGENT_REPRISE.md
-  HubHex_plan_complet.txt (cases [x] alignees code)
-  frontend/src/app/globals.css (keyframes hubhex-kanban-*, hubhex-techno-*, hubhex-modal-*)
-  frontend/src/lib/theme/theme.ts, context/ThemeContext.tsx
-  frontend/src/components/theme/ThemeCustomizer.tsx, PublicThemeReset.tsx
-  frontend/src/components/layout/AppShell.tsx, AppNav.tsx
-  frontend/src/components/ui/AppCard.tsx, PageHeader.tsx, AppButton.tsx, StatCard.tsx
-  frontend/src/components/dashboard/DashboardPanel.tsx, profile/ProfilePanel.tsx
-  frontend/src/components/depots/DepotsList.tsx, DepotDetail.tsx
-  frontend/src/components/community/CommunityPanel.tsx, graph/HubHexGraphPanel.tsx
-  frontend/src/lib/auth/statusEmoji.ts (1 emoji statut)
-  database/.gitignore (hubhex_full_dump.sql)
+FICHIERS CREES / MODIFIES RECEMMENT (session juin 2026 — explorateur + Monaco)
+  frontend/src/components/depots/DepotFileExplorer.tsx
+        authFetch, hauteur 520px, creation/renommage inline, header Arborescence adaptatif
+  frontend/src/components/depots/DepotCodeWorkbench.tsx — authFetch (load/save/download)
+  frontend/src/components/depots/MonacoEditorPane.tsx — monacoSetup, keyword completions
+  frontend/src/lib/depots/monacoSetup.ts (NOUVEAU) — workers Monaco CDN + loader.config
+  frontend/src/lib/depots/monacoKeywordCompletions.ts (NOUVEAU) — suggestions par langage
+  HubHex_etat_projet.txt, docs/AGENT_REPRISE.md, HubHex_plan_complet.txt (docs session)
+
+FICHIERS SESSIONS PRECEDENTES (juin 2026)
+  frontend/src/app/(public)/, PublicMarketingLayout, PublicSiteNav, LandingPage, FAQ, Contact
+  frontend/src/lib/auth/passwordPolicy.ts, FileTreeSchemaModal, fileTreeLayout
+  frontend/src/lib/theme/theme.ts (hubhex_theme_{userId}), backend security.js
 
 ================================================================================
 1. VISION ET ARCHITECTURE
@@ -163,7 +173,7 @@ Monorepo :
   HubHex/
     backend/          API Express (JS) + scripts
     frontend/         Application Next.js (.ts / .tsx, strict)
-    database/         hubhex_schema.sql + .gitignore dump complet
+    database/         hubhex_schema.sql + .gitignore dump (backend/database/)
     docs/             Documentation + guides prof / securite
     postman/          Collection tests API
     http/             hubhex.http (REST Client, inclut refresh/logout)
@@ -212,8 +222,8 @@ Tables au boot :
 [x] Entites CDC de base
 [x] Tables differentiation
 [x] Templates systeme seedes au boot (3 modeles)
-[x] Export schema : database/hubhex_schema.sql + npm run db:export
-[x] Dump complet : npm run db:dump → database/hubhex_full_dump.sql (gitignore)
+[x] Export schema : backend/database/hubhex_schema.sql + npm run db:export
+[x] Dump complet : npm run db:dump → backend/database/hubhex_full_dump.sql (gitignore)
 [x] Pas de seed-demo automatique
 [ ] Migrations SQL versionnees (fichiers par version)
 
@@ -248,7 +258,8 @@ DASHBOARD : resume + activite
 
 DIFFERENTIATION : templates, graphe, notes, stack, journal
 
-SECURITE : bcrypt 12, Zod, helmet, rate limits (si actives), refresh rotation
+SECURITE : bcrypt 12, Zod, helmet, rate limits, refresh rotation
+  Politique MDP inscription : maj/min/chiffre/symbole (security.js)
 
 Reste backend (non bloquant) :
 [ ] SMTP reel production
@@ -258,20 +269,22 @@ Reste backend (non bloquant) :
 [ ] Access JWT en cookie httpOnly (refresh deja HttpOnly ; access reste localStorage)
 
 --------------------------------------------------------------------------------
-2.3 FRONTEND — TypeScript strict, ~92–96 % CDC
+2.3 FRONTEND — TypeScript strict, ~94–97 % CDC
 --------------------------------------------------------------------------------
 [x] Migration .ts / .tsx — strict: true, build OK
-[x] Page accueil / (LandingPage) ; /inscription et /connexion separees
-[x] PublicPageShell + CodeAnimatedBackground (effet techno au survol souris)
-[x] KanbanPreviewWindow sur l'accueil (animation marketing + hovers)
-[x] Hovers dynamiques landing (cartes fonctionnalites, CTA, header, bloc differentiation)
-[x] Auth + refresh automatique (AuthContext.tsx, hubhex_refresh)
-[x] A11y : labels auth, focus-visible, aria-current AppNav
+[x] Pages publiques : / (public)/, /faq, /contact, /inscription, /connexion
+[x] PublicMarketingLayout + PublicSiteNav (shell partage, prefetch)
+[x] PublicPageShell + CodeAnimatedBackground (perf : RAF si souris visible)
+[x] KanbanPreviewWindow marketing (3 colonnes, progression, hovers)
+[x] Inscription : PasswordRequirements + politique MDP alignee API
+[x] Auth + refresh automatique (AuthContext.tsx)
 [x] Profil, depots, Monaco, Kanban, communaute, graphe
-[x] Logo HubHex + favicon (HubHexLogo ; header 48px + texte proportionnel)
-[x] Polices Space Grotesk + JetBrains Mono
-[x] Editeur : coloration syntaxique auto par extension (editorLanguage.ts)
-[x] Chemin fichier complet dans onglets editeur (buildFilePathForNode)
+[x] Explorateur fichiers : liste + modale schema mind-map (zoom, DnD multiple)
+[x] Explorateur : sidebar/hauteur redimensionnables, menu Actions compact
+[x] Explorateur : authFetch (token refresh sur actions API) ; creation inline sans prompt
+[x] Notes (date affichee) + stack vivante (UI badges colores)
+[x] Theme par compte (hubhex_theme_{userId}) — pas de fuite entre users
+[x] Editeur Monaco : coloration syntaxique, chemin complet onglets, suggestions (CDN workers)
 [x] dompurify >= 3.4.0 (override monaco-editor)
 
 --------------------------------------------------------------------------------
@@ -302,7 +315,7 @@ Demo soutenance : docs/SCENARIO_DEMO.md — depart accueil / puis /inscription.
 [x] docs/ORAL_GRILLE_B1.md
 [x] docs/AGENT_REPRISE.md
 [x] HubHex_plan_complet.txt (aligne etat reel)
-[x] database/hubhex_schema.sql (refresh_tokens ; regen : npm run db:export)
+[x] backend/database/hubhex_schema.sql (regen : npm run db:export)
 [ ] Captures d'ecran doc utilisateur (6 PNG manuels dans docs/assets/)
 [ ] Slides export PDF/PPT (depuis SOUTENANCE.md)
 [ ] CDC PDF final (optionnel — stack TS + refresh deja dans docs)
@@ -361,18 +374,18 @@ PRIORITE BASSE / POST-SOUTENANCE
 5. ESTIMATION PAR BLOC (%)
 ================================================================================
 
-  Auth + refresh + profil         ~92 %
-  Projets / depots / slugs        ~95 %
-  Fichiers + editeur Monaco       ~92 %
+  Auth + refresh + profil         ~94 %
+  Projets / depots / slugs        ~96 %
+  Fichiers + editeur Monaco       ~97 %
   Kanban                          ~90 %
   Communaute + profils publics    ~85 %
   Dashboard                       ~80 %
-  Differentiation CDC             ~82 %
-  Securite (JWT court, refresh)   ~90 %
-  Frontend TypeScript             ~95 %
-  Backend API (JS)                ~93 %
-  Pages publiques (accueil/auth)  ~95 %
-  UI espace connecte + theme      ~92 %
+  Differentiation CDC             ~85 %
+  Securite (JWT, refresh, MDP)    ~92 %
+  Frontend TypeScript             ~96 %
+  Backend API (JS)                ~94 %
+  Pages publiques (accueil/FAQ)   ~96 %
+  UI espace connecte + theme      ~94 %
   Docs + guides prof/securite     ~88–90 %
 
 ================================================================================
@@ -383,16 +396,27 @@ PRIORITE BASSE / POST-SOUTENANCE
   Schema BDD            backend/src/config/db.js
   Auth routes           backend/src/routes/auth.routes.js
   JWT / refresh libs    backend/src/lib/auth-token.js, refresh-token.js, auth-session.js
-  Accueil               frontend/src/app/page.tsx → LandingPage.tsx
+  Accueil               frontend/src/app/(public)/page.tsx → LandingPage.tsx
+  FAQ / Contact         frontend/src/app/(public)/faq/page.tsx, contact/page.tsx
+  Shell public partage  frontend/src/app/(public)/layout.tsx → PublicMarketingLayout.tsx
   Inscription           frontend/src/app/inscription/page.tsx
   Connexion             frontend/src/app/connexion/page.tsx
+  Politique MDP         frontend/src/lib/auth/passwordPolicy.ts
   Fond public           frontend/src/components/background/CodeAnimatedBackground.tsx
   Apercu Kanban accueil frontend/src/components/landing/KanbanPreviewWindow.tsx
   Auth front            frontend/src/context/AuthContext.tsx
-  Logo                  frontend/src/components/layout/HubHexLogo.tsx
+  Explorateur fichiers  frontend/src/components/depots/DepotFileExplorer.tsx
+  Schema arborescence   frontend/src/components/depots/FileTreeSchemaModal.tsx
+  Layout schema         frontend/src/lib/depots/fileTreeLayout.ts
+  Menu actions depot    frontend/src/components/depots/FileExplorerToolbar.tsx
   Langage editeur       frontend/src/lib/depots/editorLanguage.ts
   Editeur               frontend/src/components/depots/DepotCodeWorkbench.tsx
+  Monaco pane           frontend/src/components/depots/MonacoEditorPane.tsx
+  Monaco workers CDN    frontend/src/lib/depots/monacoSetup.ts
+  Monaco completions    frontend/src/lib/depots/monacoKeywordCompletions.ts
+  Fetch auth + refresh  frontend/src/lib/auth/authFetch.ts
   Export BDD complet    backend/scripts/export-full-database.js
+  Schema SQL export     backend/database/hubhex_schema.sql
   Tunnel API            npm run share (backend/package.json)
   Tests securite (doc)  docs/TESTS_SECURITE.md
   Lien public prof      docs/GUIDE_LIEN_API.md

@@ -57,24 +57,39 @@ interface CodeAnimatedBackgroundProps {
 
 /**
  * Fond slate par defaut ; au survol, zone illuminee avec grille + code qui defile.
+ * RAF actif uniquement quand le spot est visible (perf navigation pages publiques).
  */
 export function CodeAnimatedBackground({ subdued = false }: CodeAnimatedBackgroundProps) {
   const [spot, setSpot] = useState({ x: -9999, y: -9999 });
   const [visible, setVisible] = useState(false);
-  const rafRef = useRef<number>(0);
+  const rafRef = useRef<number | null>(null);
   const targetRef = useRef({ x: -9999, y: -9999 });
   const currentRef = useRef({ x: -9999, y: -9999 });
+  const visibleRef = useRef(false);
+  const pageVisibleRef = useRef(true);
 
   const columns = useMemo(() => {
-    const count = 7;
+    const count = subdued ? 5 : 7;
     return Array.from({ length: count }, (_, i) => {
       const offset = i * 3;
       const rotated = [...CODE_LINES.slice(offset), ...CODE_LINES.slice(0, offset)];
       return rotated;
     });
+  }, [subdued]);
+
+  const stopAnimation = useCallback(() => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
   }, []);
 
   const animate = useCallback(() => {
+    if (!visibleRef.current || !pageVisibleRef.current) {
+      stopAnimation();
+      return;
+    }
+
     const cur = currentRef.current;
     const tgt = targetRef.current;
     const ease = 0.14;
@@ -83,12 +98,23 @@ export function CodeAnimatedBackground({ subdued = false }: CodeAnimatedBackgrou
     currentRef.current = { x: nx, y: ny };
     setSpot({ x: nx, y: ny });
     rafRef.current = requestAnimationFrame(animate);
-  }, []);
+  }, [stopAnimation]);
+
+  const startAnimation = useCallback(() => {
+    if (rafRef.current != null) {
+      return;
+    }
+    rafRef.current = requestAnimationFrame(animate);
+  }, [animate]);
 
   useEffect(() => {
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [animate]);
+    visibleRef.current = visible;
+    if (visible && pageVisibleRef.current) {
+      startAnimation();
+    } else {
+      stopAnimation();
+    }
+  }, [visible, startAnimation, stopAnimation]);
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -107,21 +133,35 @@ export function CodeAnimatedBackground({ subdued = false }: CodeAnimatedBackgrou
 
     const onTouch = (event: TouchEvent) => {
       const touch = event.touches[0];
-      if (touch) onPointer(touch.clientX, touch.clientY);
+      if (touch) {
+        onPointer(touch.clientX, touch.clientY);
+      }
     };
 
     const onLeave = () => setVisible(false);
 
+    const onVisibility = () => {
+      pageVisibleRef.current = !document.hidden;
+      if (document.hidden) {
+        stopAnimation();
+      } else if (visibleRef.current) {
+        startAnimation();
+      }
+    };
+
     window.addEventListener("mousemove", onMove, { passive: true });
     window.addEventListener("touchmove", onTouch, { passive: true });
     document.documentElement.addEventListener("mouseleave", onLeave);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
+      stopAnimation();
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("touchmove", onTouch);
       document.documentElement.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [startAnimation, stopAnimation]);
 
   const radius = subdued ? SPOTLIGHT_RADIUS * 0.75 : SPOTLIGHT_RADIUS;
   const mask = visible

@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ArchiveImportDialog } from "./ArchiveImportDialog";
 import { DepotCodeWorkbench } from "./DepotCodeWorkbench";
+import { FileExplorerToolbar } from "./FileExplorerToolbar";
+import { FileTreeSchemaModal } from "./FileTreeSchemaModal";
 import { API_BASE_URL } from "../../lib/apiBaseUrl";
 import { createAuthHeaders } from "../../lib/apiHeaders";
+import { authFetch } from "../../lib/auth/authFetch";
 import { getErrorMessage } from "../../lib/errors";
 import {
   buildImportPayload,
@@ -23,6 +26,7 @@ import {
   idsMatch,
 } from "../../lib/depots/fileTreeUtils";
 import { formatApiError } from "../../lib/formatApiError";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import type {
   ArchiveImportAction,
   ArchivePromptState,
@@ -35,12 +39,27 @@ import type { PathFileEntry } from "../../types/depot";
 
 const emptyClipboard = (): FileTreeClipboard => ({ mode: null, ids: [] });
 
-type ViewMode = "list" | "schema";
+const SIDEBAR_WIDTH_KEY = "hubhex_file_sidebar_width";
+const EXPLORER_HEIGHT_KEY = "hubhex_file_explorer_height";
+const DEFAULT_SIDEBAR_WIDTH = 300;
+const DEFAULT_EXPLORER_HEIGHT = 520;
+const MIN_SIDEBAR_WIDTH = 200;
+const MAX_SIDEBAR_WIDTH = 520;
+const MIN_EXPLORER_HEIGHT = 320;
+const MAX_EXPLORER_HEIGHT = 680;
+
+function readStoredNumber(key: string, fallback: number): number {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+  const raw = localStorage.getItem(key);
+  const parsed = raw ? Number(raw) : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
 interface TreeNodeProps {
   node: ProjectFileListItem;
   depth: number;
-  viewMode: ViewMode;
   selectedIds: Set<number>;
   expandedIds: Set<number>;
   targetParentId: number | null;
@@ -54,12 +73,14 @@ interface TreeNodeProps {
   onDrop: (event: React.DragEvent, folderId: number) => void;
   onExternalDragOver?: (event: React.DragEvent) => void;
   onOpenFile?: (node: ProjectFileListItem) => void;
+  renamingId: number | null;
+  onRenameCommit: (id: number, name: string) => void;
+  onRenameCancel: () => void;
 }
 
 function TreeNode({
   node,
   depth,
-  viewMode,
   selectedIds,
   expandedIds,
   targetParentId,
@@ -73,6 +94,9 @@ function TreeNode({
   onDrop,
   onExternalDragOver,
   onOpenFile,
+  renamingId,
+  onRenameCommit,
+  onRenameCancel,
 }: TreeNodeProps) {
   const isFolder = node.kind === "folder";
   const isExpanded = expandedIds.has(node.id);
@@ -80,36 +104,18 @@ function TreeNode({
   const isTarget = idsMatch(targetParentId, node.id);
   const isDragOver = idsMatch(dragOverId, node.id);
 
-  const indent = viewMode === "schema" ? depth * 28 : depth * 16;
-  const rowClass =
-    viewMode === "schema"
-      ? `mb-2 rounded-lg border px-3 py-2.5 ${
-          isDragOver
-            ? "border-cyan-500 bg-cyan-950/40"
-            : isTarget
-              ? "border-amber-600/60 bg-amber-950/20"
-              : isSelected
-                ? "border-cyan-700 bg-cyan-950/30"
-                : "border-slate-700 bg-slate-900/80"
-        }`
-      : `flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
-          isDragOver
-            ? "bg-cyan-950/50 ring-1 ring-cyan-600"
-            : isTarget
-              ? "bg-amber-950/30 ring-1 ring-amber-600/50"
-              : isSelected
-                ? "bg-cyan-950/40"
-                : "hover:bg-slate-800/80"
-        }`;
+  const rowClass = `flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+    isDragOver
+      ? "bg-cyan-950/50 ring-1 ring-cyan-600"
+      : isTarget
+        ? "bg-amber-950/30 ring-1 ring-amber-600/50"
+        : isSelected
+          ? "bg-cyan-950/40"
+          : "hover:bg-slate-800/80"
+  }`;
 
   return (
-    <div style={{ marginLeft: indent }} className={viewMode === "schema" ? "relative" : ""}>
-      {viewMode === "schema" && depth > 0 ? (
-        <span
-          className="absolute -left-3 top-4 h-px w-3 bg-slate-600"
-          aria-hidden
-        />
-      ) : null}
+    <div style={{ marginLeft: depth * 16 }}>
       <div
         draggable
         onDragStart={(event) => onDragStart(event, node)}
@@ -121,7 +127,7 @@ function TreeNode({
         }}
         onDragLeave={() => onDragLeave(node.id)}
         onDrop={(event) => isFolder && onDrop(event, node.id)}
-        className={`${rowClass}${viewMode === "list" ? " flex items-center gap-2" : ""}`}
+        className={rowClass}
         role="treeitem"
         aria-selected={isSelected}
         onDoubleClick={() => {
@@ -154,14 +160,43 @@ function TreeNode({
           <span className={isFolder ? "text-amber-300" : "text-slate-400"}>
             {isFolder ? "📁" : node.encoding === "base64" ? "🖼" : "📄"}
           </span>
+          {renamingId === node.id ? (
+            <input
+              type="text"
+              defaultValue={node.name}
+              autoFocus
+              className="min-w-0 flex-1 rounded border border-cyan-600 bg-slate-900 px-1.5 py-0.5 font-medium text-slate-100 outline-none ring-1 ring-cyan-500/50"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  onRenameCommit(node.id, event.currentTarget.value);
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  onRenameCancel();
+                }
+              }}
+              onBlur={(event) => onRenameCommit(node.id, event.currentTarget.value)}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+        ) : (
           <span className="truncate font-medium text-slate-100">{node.name}</span>
-          {viewMode === "schema" && node.kind === "file" && node.content_preview ? (
-            <span className="truncate text-xs text-slate-500">
-              {String(node.content_preview).slice(0, 40)}
-              {String(node.content_preview).length > 40 ? "…" : ""}
-            </span>
-          ) : null}
+        )}
         </button>
+        {!isFolder && onOpenFile ? (
+          <button
+            type="button"
+            className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-cyan-400/80 transition hover:bg-cyan-950/50 hover:text-cyan-200 lg:hidden"
+            title="Ouvrir dans l'editeur"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenFile(node);
+            }}
+          >
+            Ouvrir
+          </button>
+        ) : null}
         {isFolder ? (
           <button
             type="button"
@@ -177,13 +212,12 @@ function TreeNode({
         ) : null}
       </div>
       {isFolder && isExpanded && (node.children?.length ?? 0) > 0 ? (
-        <div className={viewMode === "schema" ? "mt-1 border-l border-slate-700 pl-2" : ""}>
+        <div>
           {(node.children ?? []).map((child) => (
             <TreeNode
               key={child.id}
               node={child}
               depth={depth + 1}
-              viewMode={viewMode}
               selectedIds={selectedIds}
               expandedIds={expandedIds}
               targetParentId={targetParentId}
@@ -197,6 +231,9 @@ function TreeNode({
               onDrop={onDrop}
               onExternalDragOver={onExternalDragOver}
               onOpenFile={onOpenFile}
+              renamingId={renamingId}
+              onRenameCommit={onRenameCommit}
+              onRenameCancel={onRenameCancel}
             />
           ))}
         </div>
@@ -221,18 +258,23 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
   const [items, setItems] = useState<ProjectFileListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [schemaModalOpen, setSchemaModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
   const [targetParentId, setTargetParentId] = useState<number | null>(null);
   const [clipboard, setClipboard] = useState<FileTreeClipboard>(emptyClipboard);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
-  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [draggedIds, setDraggedIds] = useState<number[]>([]);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [explorerHeight, setExplorerHeight] = useState(DEFAULT_EXPLORER_HEIGHT);
   const [importing, setImporting] = useState(false);
   const [externalDragOver, setExternalDragOver] = useState(false);
   const [archivePrompt, setArchivePrompt] = useState<ArchivePromptState | null>(null);
   const [openTabs, setOpenTabs] = useState<EditorTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<"tree" | "editor">("tree");
+  const isMobileLayout = useMediaQuery("(max-width: 1023px)");
 
   const openFileInEditor = useCallback(
     (node: ProjectFileListItem | null) => {
@@ -247,6 +289,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
         return [...prev, { id: node.id, name: node.name, path, dirty: false }];
       });
       setActiveTabId(node.id);
+      setMobilePanel("editor");
     },
     [items, tree],
   );
@@ -269,9 +312,106 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     });
   }, []);
   const containerRef = useRef<HTMLDivElement>(null);
+  const renameCommittingRef = useRef(false);
   const uploadRef = useRef<HTMLInputElement>(null);
   const folderUploadRef = useRef<HTMLInputElement>(null);
   const archiveResolverRef = useRef<ArchiveResolver | null>(null);
+  const resizeSessionRef = useRef<{
+    kind: "sidebar" | "height";
+    startX: number;
+    startY: number;
+    startSidebar: number;
+    startHeight: number;
+  } | null>(null);
+  const sidebarWidthRef = useRef(sidebarWidth);
+  const explorerHeightRef = useRef(explorerHeight);
+  sidebarWidthRef.current = sidebarWidth;
+  explorerHeightRef.current = explorerHeight;
+
+  useEffect(() => {
+    setSidebarWidth(
+      Math.min(
+        MAX_SIDEBAR_WIDTH,
+        Math.max(MIN_SIDEBAR_WIDTH, readStoredNumber(SIDEBAR_WIDTH_KEY, DEFAULT_SIDEBAR_WIDTH)),
+      ),
+    );
+    setExplorerHeight(
+      Math.min(
+        MAX_EXPLORER_HEIGHT,
+        Math.max(MIN_EXPLORER_HEIGHT, readStoredNumber(EXPLORER_HEIGHT_KEY, DEFAULT_EXPLORER_HEIGHT)),
+      ),
+    );
+  }, []);
+
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent) => {
+      const session = resizeSessionRef.current;
+      if (!session) {
+        return;
+      }
+      if (session.kind === "sidebar") {
+        const next = Math.min(
+          MAX_SIDEBAR_WIDTH,
+          Math.max(MIN_SIDEBAR_WIDTH, session.startSidebar + (event.clientX - session.startX)),
+        );
+        setSidebarWidth(next);
+      } else {
+        const next = Math.min(
+          MAX_EXPLORER_HEIGHT,
+          Math.max(MIN_EXPLORER_HEIGHT, session.startHeight + (event.clientY - session.startY)),
+        );
+        setExplorerHeight(next);
+      }
+    };
+
+    const onMouseUp = () => {
+      const session = resizeSessionRef.current;
+      if (!session) {
+        return;
+      }
+      resizeSessionRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      if (session.kind === "sidebar") {
+        localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidthRef.current));
+      } else {
+        localStorage.setItem(EXPLORER_HEIGHT_KEY, String(explorerHeightRef.current));
+      }
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  const startSidebarResize = (event: React.MouseEvent) => {
+    event.preventDefault();
+    resizeSessionRef.current = {
+      kind: "sidebar",
+      startX: event.clientX,
+      startY: event.clientY,
+      startSidebar: sidebarWidth,
+      startHeight: explorerHeight,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  const startHeightResize = (event: React.MouseEvent) => {
+    event.preventDefault();
+    resizeSessionRef.current = {
+      kind: "height",
+      startX: event.clientX,
+      startY: event.clientY,
+      startSidebar: sidebarWidth,
+      startHeight: explorerHeight,
+    };
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+  };
 
   const applyTreeResponse = (data: FileTreeResponse) => {
     setTree(data.tree || []);
@@ -292,7 +432,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     setLoading(true);
     setMessage("");
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
+      const response = await authFetch(`${API_BASE_URL}/projects/${projectId}/files`, {
         headers: createAuthHeaders(token, false),
       });
       const data = await response.json();
@@ -319,20 +459,16 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
   const selectedArray = [...selectedIds];
 
   const createEntry = async (kind: "file" | "folder") => {
-    const label = kind === "folder" ? "dossier" : "fichier";
-    const name = window.prompt(`Nom du ${label} :`, kind === "folder" ? "nouveau-dossier" : "nouveau-fichier.txt");
-    if (!name?.trim()) {
-      return;
-    }
+    const defaultName = kind === "folder" ? "nouveau-dossier" : "nouveau-fichier.txt";
     setMessage("");
     try {
       const body = {
         parentId: targetParentId,
-        name: name.trim(),
+        name: defaultName,
         kind,
         content: kind === "file" ? "" : undefined,
       };
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
+      const response = await authFetch(`${API_BASE_URL}/projects/${projectId}/files`, {
         method: "POST",
         headers: createAuthHeaders(token),
         body: JSON.stringify(body),
@@ -341,8 +477,16 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
       if (!response.ok) {
         throw new Error(formatApiError(data) || "Erreur a la creation.");
       }
+      if (targetParentId) {
+        setExpandedIds((prev) => new Set([...prev, targetParentId]));
+      }
       await loadTree();
-      setMessage(`${kind === "folder" ? "Dossier" : "Fichier"} cree.`);
+      const createdId = data.item?.id as number | undefined;
+      if (createdId) {
+        setSelectedIds(new Set([createdId]));
+        setRenamingId(createdId);
+      }
+      setMessage(`${kind === "folder" ? "Dossier" : "Fichier"} cree — renommez puis Entree.`);
     } catch (error: unknown) {
       setMessage(getErrorMessage(error));
     }
@@ -358,7 +502,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     setMessage("");
     try {
       for (const id of selectedArray) {
-        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/${id}`, {
+        const response = await authFetch(`${API_BASE_URL}/projects/${projectId}/files/${id}`, {
           method: "DELETE",
           headers: createAuthHeaders(token, false),
         });
@@ -383,7 +527,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     openFileInEditor(node);
   };
 
-  const renameSelected = async () => {
+  const renameSelected = () => {
     if (selectedArray.length !== 1) {
       setMessage("Selectionne un seul element a renommer.");
       return;
@@ -392,17 +536,33 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     if (!node) {
       return;
     }
-    const name = window.prompt("Nouveau nom :", node.name);
-    if (!name?.trim()) {
+    setRenamingId(node.id);
+  };
+
+  const commitRename = async (id: number, rawName: string) => {
+    if (renameCommittingRef.current) {
       return;
     }
+    renameCommittingRef.current = true;
+    const name = rawName.trim();
+    setRenamingId(null);
+    const node = findNodeById(tree, id);
+    if (!node) {
+      renameCommittingRef.current = false;
+      return;
+    }
+    if (!name || name === node.name) {
+      renameCommittingRef.current = false;
+      return;
+    }
+    setMessage("");
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/projects/${projectId}/files/${node.id}`,
+      const response = await authFetch(
+        `${API_BASE_URL}/projects/${projectId}/files/${id}`,
         {
           method: "PATCH",
           headers: createAuthHeaders(token),
-          body: JSON.stringify({ name: name.trim() }),
+          body: JSON.stringify({ name }),
         },
       );
       const data = await response.json();
@@ -413,7 +573,13 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
       setMessage("Renomme.");
     } catch (error: unknown) {
       setMessage(getErrorMessage(error));
+    } finally {
+      renameCommittingRef.current = false;
     }
+  };
+
+  const cancelRename = () => {
+    setRenamingId(null);
   };
 
   const copySelection = () => {
@@ -439,7 +605,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     }
     setMessage("");
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/paste`, {
+      const response = await authFetch(`${API_BASE_URL}/projects/${projectId}/files/paste`, {
         method: "POST",
         headers: createAuthHeaders(token),
         body: JSON.stringify({
@@ -464,18 +630,18 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     }
   };
 
-  const moveDragged = async (targetId: number | null) => {
-    if (!draggedId || draggedId === targetId) {
+  const moveNodesToParent = async (sourceIds: number[], targetParentId: number | null) => {
+    if (!sourceIds.length) {
       return;
     }
     setMessage("");
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/move`, {
+      const response = await authFetch(`${API_BASE_URL}/projects/${projectId}/files/move`, {
         method: "POST",
         headers: createAuthHeaders(token),
         body: JSON.stringify({
-          ids: [draggedId],
-          targetParentId: targetId,
+          ids: sourceIds,
+          targetParentId,
         }),
       });
       const data = await response.json();
@@ -483,19 +649,31 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
         throw new Error(formatApiError(data) || "Erreur au deplacement.");
       }
       applyTreeResponse(data);
-      setMessage("Deplace.");
+      setMessage(sourceIds.length > 1 ? `${sourceIds.length} elements deplaces.` : "Deplace.");
     } catch (error: unknown) {
       setMessage(getErrorMessage(error));
+      throw error;
+    }
+  };
+
+  const moveDragged = async (targetId: number | null) => {
+    if (!draggedIds.length) {
+      return;
+    }
+    try {
+      await moveNodesToParent(draggedIds, targetId);
     } finally {
-      setDraggedId(null);
+      setDraggedIds([]);
       setDragOverId(null);
     }
   };
 
   const onDragStart = (event: React.DragEvent, node: ProjectFileListItem) => {
-    setDraggedId(node.id);
+    const ids =
+      selectedIds.has(node.id) && selectedIds.size > 1 ? [...selectedIds] : [node.id];
+    setDraggedIds(ids);
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(node.id));
+    event.dataTransfer.setData("text/plain", ids.join(","));
   };
 
   const onDragOver = (event: React.DragEvent, folderId: number) => {
@@ -513,15 +691,19 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
   };
 
   const onSelect = (event: React.MouseEvent, node: ProjectFileListItem) => {
+    const multi = event.ctrlKey || event.metaKey;
     setSelectedIds((prev) => {
-      const next = new Set(event.ctrlKey || event.metaKey ? prev : []);
-      if (next.has(node.id) && (event.ctrlKey || event.metaKey)) {
+      const next = new Set(multi ? prev : []);
+      if (next.has(node.id) && multi) {
         next.delete(node.id);
       } else {
         next.add(node.id);
       }
       return next;
     });
+    if (isMobileLayout && node.kind === "file" && !multi) {
+      openFileInEditor(node);
+    }
   };
 
   const onKeyDown = (event: React.KeyboardEvent) => {
@@ -573,7 +755,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
       let imported = 0;
 
       for (const chunk of chunks) {
-        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/import-batch`, {
+        const response = await authFetch(`${API_BASE_URL}/projects/${projectId}/files/import-batch`, {
           method: "POST",
           headers: createAuthHeaders(token),
           body: JSON.stringify({ parentId, entries: chunk }),
@@ -612,7 +794,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
   };
 
   const onExternalDragOver = (event: React.DragEvent) => {
-    if (draggedId) {
+    if (draggedIds.length) {
       return;
     }
     if ([...(event.dataTransfer?.types || [])].includes("Files")) {
@@ -632,7 +814,7 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
     event.stopPropagation();
     setExternalDragOver(false);
 
-    if (draggedId) {
+    if (draggedIds.length) {
       await moveDragged(parentId);
       return;
     }
@@ -644,81 +826,137 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
 
   const pathLabel = buildPathLabel(items, targetParentId, tree);
 
+  const showTreePanel = !isMobileLayout || mobilePanel === "tree";
+  const showEditorPanel = !isMobileLayout || mobilePanel === "editor";
+
+  const panelBtnClass = (active: boolean) =>
+    `rounded-md transition ${
+      active
+        ? "bg-cyan-600 text-white"
+        : "border border-slate-600 text-slate-300 hover:border-cyan-600 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+    }`;
+
   return (
     <div
       ref={containerRef}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="mt-2 flex h-[min(72vh,680px)] min-h-[420px] flex-col outline-none lg:flex-row"
+      className="relative mt-2 flex flex-col outline-none lg:flex-row"
+      style={
+        isMobileLayout
+          ? undefined
+          : ({
+              height: explorerHeight,
+              "--file-sidebar-width": `${sidebarWidth}px`,
+            } as React.CSSProperties)
+      }
       aria-label="Explorateur et editeur de code"
     >
-      <aside className="flex w-full shrink-0 flex-col border-b border-slate-700 lg:w-[280px] lg:border-b-0 lg:border-r">
-      <div className="flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Arborescence
-          </p>
-          <p className="mt-1 font-mono text-xs text-cyan-400/90">
-            Destination : {pathLabel}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      {isMobileLayout ? (
+        <div className="flex items-center justify-between gap-2 border-b border-slate-700/50 px-2 py-2 lg:hidden">
+          <div className="flex gap-1">
+            <button
+              type="button"
+              className={`${panelBtnClass(mobilePanel === "tree")} px-2.5 py-1 text-xs`}
+              aria-current={mobilePanel === "tree" ? "true" : undefined}
+              onClick={() => setMobilePanel("tree")}
+            >
+              Liste
+            </button>
+            <button
+              type="button"
+              className={`${panelBtnClass(mobilePanel === "editor")} px-2.5 py-1 text-xs`}
+              aria-current={mobilePanel === "editor" ? "true" : undefined}
+              disabled={openTabs.length === 0}
+              onClick={() => setMobilePanel("editor")}
+            >
+              Editeur
+            </button>
+          </div>
           <button
             type="button"
-            className={`rounded-md px-2.5 py-1 text-xs ${
-              viewMode === "list"
-                ? "bg-cyan-600 text-white"
-                : "border border-slate-600 text-slate-300"
-            }`}
-            onClick={() => setViewMode("list")}
-          >
-            Liste
-          </button>
-          <button
-            type="button"
-            className={`rounded-md px-2.5 py-1 text-xs ${
-              viewMode === "schema"
-                ? "bg-cyan-600 text-white"
-                : "border border-slate-600 text-slate-300"
-            }`}
-            onClick={() => setViewMode("schema")}
+            className={`${panelBtnClass(false)} px-2.5 py-1 text-xs`}
+            onClick={() => setSchemaModalOpen(true)}
           >
             Schema
           </button>
         </div>
-      </div>
+      ) : null}
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200 hover:border-cyan-600"
-          onClick={() => createEntry("file")}
+      <aside
+        className={`w-full shrink-0 flex-col border-b border-slate-700 lg:w-[var(--file-sidebar-width)] lg:max-w-[var(--file-sidebar-width)] lg:border-b-0 lg:border-r ${
+          showTreePanel ? "flex" : "hidden lg:flex"
+        }`}
+        style={isMobileLayout ? { minHeight: "min(52vh, 420px)" } : undefined}
+      >
+        <div
+          className={`flex min-w-0 gap-1.5 p-2 ${
+            sidebarWidth < 240 ? "flex-col" : "flex-row items-center justify-between"
+          }`}
         >
-          + Fichier
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200 hover:border-cyan-600"
-          onClick={() => createEntry("folder")}
-        >
-          + Dossier
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={() => uploadRef.current?.click()}
-          disabled={importing}
-        >
-          Importer fichiers
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={() => folderUploadRef.current?.click()}
-          disabled={importing}
-        >
-          Importer dossier
-        </button>
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p
+              className="truncate font-semibold uppercase tracking-wide text-slate-500"
+              style={{ fontSize: "clamp(8px, calc(var(--file-sidebar-width, 300px) / 28), 12px)" }}
+              title="Arborescence"
+            >
+              {sidebarWidth < 200 ? "Arb." : sidebarWidth < 260 ? "Arboresc." : "Arborescence"}
+            </p>
+            {sidebarWidth >= 220 ? (
+              <p
+                className="mt-0.5 truncate font-mono text-cyan-400/90"
+                style={{ fontSize: "clamp(8px, calc(var(--file-sidebar-width, 300px) / 32), 11px)" }}
+              >
+                {sidebarWidth < 300 ? pathLabel : `Destination : ${pathLabel}`}
+              </p>
+            ) : null}
+          </div>
+          <div className={`hidden shrink-0 gap-1 lg:flex ${sidebarWidth < 240 ? "w-full" : ""}`}>
+            <button
+              type="button"
+              className="rounded-md bg-cyan-600 text-white"
+              style={{
+                fontSize: "clamp(9px, calc(var(--file-sidebar-width, 300px) / 30), 12px)",
+                padding: sidebarWidth < 240 ? "4px 8px" : "4px 10px",
+              }}
+              aria-current="true"
+            >
+              Liste
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-slate-600 text-slate-300 transition hover:border-cyan-600 hover:text-cyan-200"
+              style={{
+                fontSize: "clamp(9px, calc(var(--file-sidebar-width, 300px) / 30), 12px)",
+                padding: sidebarWidth < 240 ? "4px 8px" : "4px 10px",
+              }}
+              onClick={() => setSchemaModalOpen(true)}
+            >
+              Schema
+            </button>
+          </div>
+        </div>
+
+        <FileExplorerToolbar
+          importing={importing}
+          hasSelection={selectedArray.length > 0}
+          selectionCount={selectedArray.length}
+          canPaste={clipboard.ids.length > 0}
+          canEdit={selectedArray.length === 1}
+          maxFileSizeLabel={formatMaxFileSize()}
+          onCreateFile={() => createEntry("file")}
+          onCreateFolder={() => createEntry("folder")}
+          onImportFiles={() => uploadRef.current?.click()}
+          onImportFolder={() => folderUploadRef.current?.click()}
+          onCopy={copySelection}
+          onCut={cutSelection}
+          onPaste={pasteClipboard}
+          onEdit={openSelectedEditor}
+          onRename={renameSelected}
+          onDelete={deleteSelected}
+          onGoRoot={() => setTargetParentId(null)}
+        />
+
         <input
           ref={uploadRef}
           type="file"
@@ -734,134 +972,106 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
           onChange={onUploadFolder}
           {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)}
         />
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={copySelection}
-          disabled={!selectedArray.length}
-        >
-          Copier
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={cutSelection}
-          disabled={!selectedArray.length}
-        >
-          Couper
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={pasteClipboard}
-          disabled={!clipboard.ids.length}
-        >
-          Coller
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={openSelectedEditor}
-          disabled={selectedArray.length !== 1}
-        >
-          Editer
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-200"
-          onClick={renameSelected}
-          disabled={selectedArray.length !== 1}
-        >
-          Renommer
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-red-900/50 px-2.5 py-1 text-xs text-red-300"
-          onClick={deleteSelected}
-          disabled={!selectedArray.length}
-        >
-          Supprimer
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-slate-600 px-2.5 py-1 text-xs text-slate-400"
-          onClick={() => setTargetParentId(null)}
-        >
-          Racine /
-        </button>
-      </div>
+        {archivePrompt ? (
+          <ArchiveImportDialog
+            file={archivePrompt.file}
+            path={archivePrompt.path}
+            onChoose={(action) => closeArchivePrompt(action)}
+            onCancel={() => closeArchivePrompt(null)}
+          />
+        ) : null}
+        {importing ? <p className="mt-1 px-3 text-xs text-cyan-300">Import en cours...</p> : null}
 
-      <p className="mt-2 text-xs text-slate-500">
-        Tous types de fichiers (max {formatMaxFileSize()} chacun) · Archives .zip : choix
-        decompresser ou importer tel quel · Ctrl+C / Ctrl+X / Ctrl+V · Double-clic dossier =
-        destination
-      </p>
-      {archivePrompt ? (
-        <ArchiveImportDialog
-          file={archivePrompt.file}
-          path={archivePrompt.path}
-          onChoose={(action) => closeArchivePrompt(action)}
-          onCancel={() => closeArchivePrompt(null)}
-        />
-      ) : null}
-      {importing ? <p className="mt-1 text-xs text-cyan-300">Import en cours...</p> : null}
+        {message ? <p className="mt-2 px-3 text-sm text-slate-300">{message}</p> : null}
 
-      {message ? <p className="mt-2 text-sm text-slate-300">{message}</p> : null}
-
-      <div
-        className={`mx-3 mb-3 min-h-[120px] flex-1 rounded-lg border p-2 transition ${
-          externalDragOver
-            ? "border-cyan-500 bg-cyan-950/30"
-            : "border-slate-700 bg-slate-950/60"
-        } ${viewMode === "schema" ? "overflow-x-auto" : "overflow-y-auto"}`}
-        role="tree"
-        onDragOver={onExternalDragOver}
-        onDragLeave={() => setExternalDragOver(false)}
-        onDrop={(event) => handleDropZone(event, targetParentId)}
-      >
-        {loading ? (
-          <p className="text-sm text-slate-500">Chargement...</p>
-        ) : tree.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Depot vide. Cree un fichier/dossier, importe ou glisse-depose depuis ton explorateur.
-          </p>
-        ) : (
-          tree.map((node) => (
-            <TreeNode
-              key={node.id}
-              node={node}
-              depth={0}
-              viewMode={viewMode}
-              selectedIds={selectedIds}
-              expandedIds={expandedIds}
-              targetParentId={targetParentId}
-              dragOverId={dragOverId}
-              onSelect={onSelect}
-              onToggleExpand={(id) =>
-                setExpandedIds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(id)) {
-                    next.delete(id);
-                  } else {
-                    next.add(id);
-                  }
-                  return next;
-                })
-              }
-              onSetTarget={setTargetParentId}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onExternalDragOver={onExternalDragOver}
-              onOpenFile={openFileInEditor}
-            />
-          ))
-        )}
-      </div>
+        <div
+          className={`mx-3 mb-3 min-h-[120px] flex-1 overflow-y-auto rounded-lg border p-2 transition ${
+            externalDragOver
+              ? "border-cyan-500 bg-cyan-950/30"
+              : "border-slate-700 bg-slate-950/60"
+          }`}
+          role="tree"
+          onDragOver={onExternalDragOver}
+          onDragLeave={() => setExternalDragOver(false)}
+          onDrop={(event) => handleDropZone(event, targetParentId)}
+        >
+          {loading ? (
+            <p className="text-sm text-slate-500">Chargement...</p>
+          ) : tree.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              Depot vide. Cree un fichier/dossier, importe ou glisse-depose depuis ton explorateur.
+            </p>
+          ) : (
+            tree.map((node) => (
+              <TreeNode
+                key={node.id}
+                node={node}
+                depth={0}
+                selectedIds={selectedIds}
+                expandedIds={expandedIds}
+                targetParentId={targetParentId}
+                dragOverId={dragOverId}
+                onSelect={onSelect}
+                onToggleExpand={(id) =>
+                  setExpandedIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(id)) {
+                      next.delete(id);
+                    } else {
+                      next.add(id);
+                    }
+                    return next;
+                  })
+                }
+                onSetTarget={setTargetParentId}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                onExternalDragOver={onExternalDragOver}
+                onOpenFile={openFileInEditor}
+                renamingId={renamingId}
+                onRenameCommit={commitRename}
+                onRenameCancel={cancelRename}
+              />
+            ))
+          )}
+        </div>
       </aside>
 
-      <main className="flex min-h-[280px] min-w-0 flex-1 flex-col lg:min-h-0">
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Redimensionner la liste de fichiers"
+        onMouseDown={startSidebarResize}
+        className="hidden w-1.5 shrink-0 cursor-col-resize bg-slate-800/40 transition hover:bg-cyan-600/50 lg:block"
+      />
+
+      <main
+        className={`min-w-0 flex-1 flex-col lg:min-h-0 ${
+          showEditorPanel ? "flex" : "hidden lg:flex"
+        }`}
+        style={isMobileLayout ? { minHeight: "min(70vh, 640px)" } : { minHeight: 280 }}
+      >
+        {isMobileLayout ? (
+          <div className="flex items-center gap-2 border-b border-slate-700/50 px-2 py-1.5">
+            <button
+              type="button"
+              className="rounded-md px-2 py-1 text-xs text-slate-400 transition hover:bg-slate-800 hover:text-cyan-200"
+              onClick={() => setMobilePanel("tree")}
+            >
+              ← Arborescence
+            </button>
+            {activeTabId ? (
+              <span className="min-w-0 truncate font-mono text-xs text-cyan-300/90">
+                {openTabs.find((tab) => tab.id === activeTabId)?.path ||
+                  openTabs.find((tab) => tab.id === activeTabId)?.name}
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500">Aucun fichier ouvert</span>
+            )}
+          </div>
+        ) : null}
         <DepotCodeWorkbench
           token={token}
           projectId={projectId}
@@ -873,6 +1083,28 @@ export function DepotFileExplorer({ token, projectId }: DepotFileExplorerProps) 
           onSaved={loadTree}
         />
       </main>
+
+      {!isMobileLayout ? (
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Redimensionner la hauteur de l'editeur"
+          onMouseDown={startHeightResize}
+          className="absolute bottom-0 left-0 right-0 z-10 h-2 cursor-row-resize bg-transparent hover:bg-cyan-600/30"
+        />
+      ) : null}
+
+      <FileTreeSchemaModal
+        open={schemaModalOpen}
+        onClose={() => setSchemaModalOpen(false)}
+        tree={tree}
+        selectedIds={selectedIds}
+        onSelect={onSelect}
+        onMove={moveNodesToParent}
+        onOpenFile={openFileInEditor}
+        statusMessage={message}
+      />
+
     </div>
   );
 }
