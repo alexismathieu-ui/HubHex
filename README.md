@@ -1,6 +1,6 @@
 # HubHex
 
-Plateforme web de gestion de projets pour developpeurs : depots heberges sur HubHex (`username/slug`), Kanban, fichiers, communaute et **differentiation** (stack vivante, journal, templates, graphe).
+Plateforme web de gestion de projets pour developpeurs : depots heberges sur HubHex (`username/slug`), Kanban, fichiers, communaute et **differentiation** (Maitrise, journal, templates, graphe).
 
 ## Stack
 
@@ -74,7 +74,7 @@ HubHex/
 - **Pages publiques** : accueil, FAQ, contact — layout partage, navigation rapide
 - **Theme** : personnalisation par compte (espace connecte) ; pages publiques en cyan fixe
 - **Depots** : CRUD, slug, fichiers (liste + schema mind-map modale, zoom, DnD multiple), Monaco (desktop) / apercu code mobile, Kanban
-- **Differentiation** : stack vivante, journal de decisions, notes techniques, templates, graphe HubHex
+- **Differentiation** : Maitrise, journal de decisions, notes techniques, templates, graphe HubHex
 - **Communaute** : projets publics, commentaires, recherche et filtres
 - **Dashboard** : resume et activite recente
 
@@ -113,7 +113,6 @@ Verification des fonctionnalites annoncees : [docs/CHECKLIST_FONCTIONNALITES.md]
 - [Documentation utilisateur](docs/DOCUMENTATION_UTILISATEUR.md) (captures integrees)
 - [Documentation technique](docs/DOCUMENTATION_TECHNIQUE.md)
 - [Scenario de demo soutenance](docs/SCENARIO_DEMO.md)
-- [Support presentation](docs/SOUTENANCE.md)
 - [Checklist jour J soutenance](docs/CHECKLIST_JOUR_J.md)
 - [Reprise agent / micro-prompt](docs/AGENT_REPRISE.md)
 
@@ -122,7 +121,6 @@ Verification des fonctionnalites annoncees : [docs/CHECKLIST_FONCTIONNALITES.md]
 - Code source frontend + backend (ce depot)
 - Export BDD : regenerer avant remise avec `cd backend && npm run db:export` (`backend/database/hubhex_schema.sql`) ; dump complet avec `npm run db:dump` (`backend/database/hubhex_full_dump.sql`, non versionne)
 - Documentation utilisateur et technique (`docs/`)
-- Support de presentation (`docs/SOUTENANCE.md`)
 
 ## Securite (resume)
 
