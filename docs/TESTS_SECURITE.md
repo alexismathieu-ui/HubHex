@@ -12,12 +12,12 @@ Remplacez `BASE` par votre URL (`http://localhost:4000` ou tunnel Cloudflare).
 
 | # | Test (section) | Date d'execution | OK |
 |---|----------------|------------------|-----|
-| 1 | A — Authentification et tokens (A1–A8) | ____/____/2026 | [ ] |
-| 2 | B — Controle d'acces IDOR (B1–B3) | ____/____/2026 | [ ] |
-| 3 | C — Validation et injections (C1–C4) | ____/____/2026 | [ ] |
-| 4 | D — Rate limiting (D1–D2, `ENABLE_RATE_LIMIT=true`) | ____/____/2026 | [ ] |
-| 5 | E — Exposition et transport (E1–E3) | ____/____/2026 | [ ] |
-| 6 | F — Donnees sensibles (F1–F2) | ____/____/2026 | [ ] |
+| 1 | A — Authentification et tokens (A1–A8) | ____/____/2026 | [X] |
+| 2 | B — Controle d'acces IDOR (B1–B3) | ____/____/2026 | [X] |
+| 3 | C — Validation et injections (C1–C4) | ____/____/2026 | [X] |
+| 4 | D — Rate limiting (D1–D2, `ENABLE_RATE_LIMIT=true`) | ____/____/2026 | [X] |
+| 5 | E — Exposition et transport (E1–E3) | ____/____/2026 | [X] |
+| 6 | F — Donnees sensibles (F1–F2) | ____/____/2026 | [X] |
 
 **Notes jury** (optionnel) :
 

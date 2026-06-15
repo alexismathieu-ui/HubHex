@@ -79,7 +79,7 @@ Legende : **OK** = implemente et teste · **PARTIEL** = present mais limite · *
 | Export schema SQL | OK | `npm run db:export` | [X] |
 | Docker Compose | OK | `docker-compose.yml` | [X] |
 | Doc deploiement prod | OK | `DEPLOIEMENT_PRODUCTION.md` | [X] |
-| Captures PNG doc utilisateur | MANUEL | `docs/assets/` (6+ PNG) | [X] |
+| Captures PNG doc utilisateur | OK | `docs/assets/00-accueil.png` … `06-profil.png` | [x] |
 | Slides PDF/PPT soutenance | MANUEL | export depuis `SOUTENANCE.md` | [X] |
 | Parcours demo chronometre | MANUEL | `SCENARIO_DEMO.md` | [X] |
 | Tests securite cocher | MANUEL | `TESTS_SECURITE.md` | [X] |

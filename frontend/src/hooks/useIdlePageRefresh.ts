@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "scroll", "touchstart", "click"] as const;
 
 /** Recharge la page apres une periode d'inactivite (accueil marketing). */
-export function useIdlePageRefresh(idleMs = 5000): void {
+export function useIdlePageRefresh(idleMs = 20_000): void {
   const idleTimerRef = useRef<number | null>(null);
 
   useEffect(() => {

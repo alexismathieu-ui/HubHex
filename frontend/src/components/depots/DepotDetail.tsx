@@ -24,7 +24,7 @@ import { TechTagPicker } from "./TechTagPicker";
 const TABS = [
   { id: "fichiers", label: "Fichiers" },
   { id: "kanban", label: "Kanban" },
-  { id: "stack", label: "Stack" },
+  { id: "stack", label: "Maitrise" },
   { id: "journal", label: "Journal" },
   { id: "notes", label: "Notes" },
   { id: "parametres", label: "Parametres" },
@@ -242,7 +242,12 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
 
         {activeTab === "stack" ? (
           <AppCard>
-            <ProjectStackPanel token={token} projectId={project.id} />
+            <ProjectStackPanel
+              token={token}
+              projectId={project.id}
+              technologies={technologiesFromProject(project)}
+              onManageTechnologies={startEdit}
+            />
           </AppCard>
         ) : null}
 
@@ -289,6 +294,7 @@ export function DepotDetail({ depotId }: DepotDetailProps) {
             <TechTagPicker
               value={editForm.selectedTechnologies}
               onChange={(tags: string[]) => setEditForm({ ...editForm, selectedTechnologies: tags })}
+              hint="Modifie la liste utilisee par l'onglet Maitrise."
             />
             <select
               className="hubhex-input"

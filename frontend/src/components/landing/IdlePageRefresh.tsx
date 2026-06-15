@@ -3,6 +3,6 @@
 import { useIdlePageRefresh } from "../../hooks/useIdlePageRefresh";
 
 export function IdlePageRefresh() {
-  useIdlePageRefresh(5000);
+  useIdlePageRefresh(20_000);
   return null;
 }

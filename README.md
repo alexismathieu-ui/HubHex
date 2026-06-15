@@ -84,8 +84,8 @@ HubHex/
 |----------|-------------|
 | `backend/npm run dev` | API en developpement |
 | `backend/npm test` | Tests automatises (node:test) |
-| `backend/npm run db:export` | Export schema vers `backend/database/hubhex_schema.sql` |
-| `backend/npm run db:dump` | Export complet (structure + donnees) vers `backend/database/hubhex_full_dump.sql` |
+| `backend/npm run db:export` | Export schema vers `database/hubhex_schema.sql` |
+| `backend/npm run db:dump` | Export complet vers `database/hubhex_full_dump.sql` |
 | `backend/npm run share` | Tunnel public Cloudflare vers l'API (audit jury) |
 | `backend/npm run reset-password -- email NouveauMdp1!` | Reset MDP admin |
 
@@ -103,13 +103,14 @@ Verification des fonctionnalites annoncees : [docs/CHECKLIST_FONCTIONNALITES.md]
 
 ## Documentation
 
+- [Export SQL (schema et dump)](docs/EXPORT_SQL.md)
 - [Deploiement production & Docker](docs/DEPLOIEMENT_PRODUCTION.md)
 - [Checklist fonctionnalites (README vs realise)](docs/CHECKLIST_FONCTIONNALITES.md)
 - [Tests de securite API](docs/TESTS_SECURITE.md) — JWT + refresh token, checklist audit
 - [Partager l’API via un lien (prof)](docs/GUIDE_LIEN_API.md) — tunnel + URL publique
 - [Guide test API (correcteur / prof)](docs/GUIDE_TEST_API.md) — Postman, REST Client, curl
 - [Checklist demarrage local](docs/CHECKLIST_DEMARRAGE_LOCAL.md)
-- [Documentation utilisateur](docs/DOCUMENTATION_UTILISATEUR.md)
+- [Documentation utilisateur](docs/DOCUMENTATION_UTILISATEUR.md) (captures integrees)
 - [Documentation technique](docs/DOCUMENTATION_TECHNIQUE.md)
 - [Scenario de demo soutenance](docs/SCENARIO_DEMO.md)
 - [Support presentation](docs/SOUTENANCE.md)

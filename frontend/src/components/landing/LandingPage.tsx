@@ -30,7 +30,7 @@ const FEATURES = [
     icon: "◎",
   },
   {
-    title: "Stack & journal",
+    title: "Maitrise & journal",
     description:
       "Documentez les technos (liens, statuts, snippets) et l'historique de vos decisions techniques.",
     icon: "▤",

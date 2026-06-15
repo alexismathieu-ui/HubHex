@@ -215,6 +215,7 @@ export function DepotsList() {
             onChange={(tags: string[]) =>
               setCreateForm({ ...createForm, selectedTechnologies: tags })
             }
+            hint="Ces badges apparaissent sur le depot et dans l'onglet Maitrise (niveau par techno)."
           />
           <select
             className="hubhex-input"

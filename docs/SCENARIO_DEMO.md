@@ -35,7 +35,7 @@ Utilisez **votre compte** cree sur http://localhost:3000/connexion (inscription 
 | 4 | **Nouveau depot (template)** | 60 s | Ex. « Application web full-stack » |
 | 5 | **Fichiers** | 60 s | Importer ou editer un fichier texte (Monaco) |
 | 6 | **Kanban** | 45 s | Glisser une tache vers « Termine » |
-| 7 | **Stack** | 45 s | Ajouter une techno + lien + snippet |
+| 7 | **Maitrise** | 45 s | Onglet Maitrise : choisir le niveau d'une techno du depot + note optionnelle |
 | 8 | **Journal** | 45 s | Entree de decision |
 | 9 | **Graphe** | 60 s | Lier deux depots (ex. « meme techno ») |
 | 10 | **Communaute** | 60 s | Projet public, laisser un commentaire |
@@ -58,11 +58,11 @@ Pour creneau serre ou reseau lent :
 | 1 | Connexion | 45 s | Depuis `/connexion` (ou accueil → Connexion) |
 | 2 | Dashboard + depot | 90 s | Template rapide |
 | 3 | Kanban + fichier | 90 s | Un drag + un fichier ou note |
-| 4 | Differentiation | 60 s | **Stack** *ou* **Journal** (un seul) |
+| 4 | Differentiation | 60 s | **Maitrise** *ou* **Journal** (un seul) |
 | 5 | Graphe *ou* Communaute | 90 s | Un lien graphe **ou** commentaire public |
 | 6 | Profil | 30 s | Pseudo / avatar |
 
-Omettre : accueil marketing, deuxieme depot graphe, stack *et* journal.
+Omettre : accueil marketing, deuxieme depot graphe, maitrise *et* journal.
 
 ---
 

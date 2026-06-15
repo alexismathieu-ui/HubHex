@@ -1,0 +1,6 @@
+# Fichiers ignores a la racine du monorepo
+
+.env.docker
+.DS_Store
+Thumbs.db
+*.log

@@ -22,9 +22,9 @@ const FAQ_ITEMS = [
     icon: "▣",
   },
   {
-    question: "Qu'est-ce que la stack vivante et le graphe ?",
+    question: "A quoi sert l'onglet Maitrise et le graphe ?",
     answer:
-      "La stack documente vos technos avec statut et liens. Le graphe relie vos depots entre eux pour visualiser la capitalisation technique entre projets.",
+      "L'onglet Maitrise reprend les memes technologies que les badges du depot : pour chacune, vous indiquez si elle est a venir, en cours ou maitrisee (lien doc et note optionnels). Le graphe relie vos depots entre eux pour visualiser la capitalisation entre projets.",
     icon: "⬡",
   },
   {

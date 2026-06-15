@@ -40,10 +40,24 @@
 - Onglets par depot :
   - **Fichiers** : arborescence, import, double-clic ou bouton **Editer** pour modifier un fichier texte
   - **Kanban** : glisser-deposer les taches entre colonnes
-  - **Stack** : technologies avec lien, statut et snippet
+  - **Maitrise** : pour chaque badge techno du depot, indiquer le niveau (a venir / en cours / maitrisee) + lien ou note optionnels
   - **Journal** : decisions techniques datees
   - **Notes** : notes techniques separees de la description
   - **Parametres** : visibilite public/prive
+
+### Onglet Maitrise (technologies du depot)
+
+Les **badges** en haut du depot (React, PostgreSQL…) sont la liste officielle des technos. L'onglet **Maitrise** reprend automatiquement cette liste : vous n'ajoutez plus une deuxieme fois la meme techno.
+
+Pour chaque badge :
+
+| Champ | Description |
+|-------|-------------|
+| **Niveau** | A venir · En cours · Maitrisee |
+| **Lien doc** | Optionnel (site officiel, tutoriel…) |
+| **Note / extrait** | Optionnel (commande, requete SQL, rappel) |
+
+Pour ajouter ou retirer une technologie : **Modifier** le depot (parametres) — la fiche Maitrise se met a jour automatiquement.
 
 ## Graphe HubHex
 
@@ -69,13 +83,16 @@ Demarrage local : voir [CHECKLIST_DEMARRAGE_LOCAL.md](CHECKLIST_DEMARRAGE_LOCAL.
 
 ## Captures d'ecran
 
-Ajoutez vos captures dans le dossier `docs/assets/` (voir [assets/README.md](assets/README.md)), puis decommentez les lignes ci-dessous :
-
-<!--
 ![Accueil](assets/00-accueil.png)
-![Connexion](assets/01-connexion.png)
-![Tableau de bord](assets/02-dashboard.png)
-![Kanban](assets/03-kanban.png)
-![Graphe](assets/04-graphe.png)
-![Communaute](assets/05-communaute.png)
--->
+
+![FAQ](assets/01-faq.png)
+
+![Contact](assets/02-contact.png)
+
+![Connexion](assets/03-connexion.png)
+
+![Inscription](assets/04-inscription.png)
+
+![Tableau de bord](assets/05-dashboard.png)
+
+![Profil](assets/06-profil.png)
