@@ -63,7 +63,7 @@ HubHex/
   backend/          API Express
   frontend/         Application Next.js
   backend/database/ Export schema SQL
-  docs/             Documentation utilisateur, technique, soutenance
+  docs/             Documentation utilisateur et technique
   postman/          Collection tests API
   http/             Fichiers REST Client
 ```
@@ -112,9 +112,6 @@ Verification des fonctionnalites annoncees : [docs/CHECKLIST_FONCTIONNALITES.md]
 - [Checklist demarrage local](docs/CHECKLIST_DEMARRAGE_LOCAL.md)
 - [Documentation utilisateur](docs/DOCUMENTATION_UTILISATEUR.md) (captures integrees)
 - [Documentation technique](docs/DOCUMENTATION_TECHNIQUE.md)
-- [Scenario de demo soutenance](docs/SCENARIO_DEMO.md)
-- [Checklist jour J soutenance](docs/CHECKLIST_JOUR_J.md)
-- [Reprise agent / micro-prompt](docs/AGENT_REPRISE.md)
 
 ## Livrables CDC
 
